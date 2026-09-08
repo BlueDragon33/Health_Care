@@ -635,7 +635,7 @@ export async function getHealthControlStatus() {
   ).bind(now, now).first<{ total: number; active: number; revoked: number; expired: number }>();
   return {
     application: "child-health" as const,
-    contractVersion: 2,
+    contractVersion: 3,
     service: policy.accessEnabled ? "online" as const : "paused" as const,
     serverTime: new Date().toISOString(),
     devices: {
