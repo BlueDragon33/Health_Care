@@ -34,6 +34,7 @@ import SecureVaultCenter from "./secure-vault-center";
 import SecureVaultBackupCenter from "./secure-vault-backup-center";
 import { SecureVaultSessionProvider } from "./secure-vault-session";
 import MedicationsAllergies from "./medications-allergies";
+import VitalSignsScreening from "./vital-signs-screening";
 import PrivateSensitiveNotes from "./private-sensitive-notes";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
 import {
@@ -448,6 +449,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <SecureVaultCenter />
             <SecureVaultBackupCenter />
             <MedicationsAllergies />
+            <VitalSignsScreening />
             <PrivateSensitiveNotes />
           </SecureVaultSessionProvider> : null}
           <div className="hf-work-grid">

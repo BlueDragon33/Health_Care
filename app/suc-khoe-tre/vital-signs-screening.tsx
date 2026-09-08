@@ -214,12 +214,6 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium" }).format(date);
 }
 
-function formatDateTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
-  return new Intl.DateTimeFormat("vi-VN", { dateStyle: "medium", timeStyle: "short" }).format(date);
-}
-
 export default function VitalSignsScreening() {
   const {
     profileId,
@@ -510,7 +504,7 @@ export default function VitalSignsScreening() {
     </> : null}
 
     {notice ? <div className="vss-notice" role="status">{notice}</div> : null}
-    <p className="vss-footnote">Mọi record của module này chỉ được giải mã khi Profile Privacy cho phép và Secure Vault của đúng hồ sơ đang mở. Record được đi cùng bản sao Secure Vault đã mã hóa, không đi vào bản sao baseline, Health Timeline hay Site Quản trị. Cập nhật giao diện gần nhất: {formatDateTime(new Date().toISOString())}.</p>
+    <p className="vss-footnote">Mọi record của module này chỉ được giải mã khi Profile Privacy cho phép và Secure Vault của đúng hồ sơ đang mở. Record được đi cùng bản sao Secure Vault đã mã hóa, không đi vào bản sao baseline, Health Timeline hay Site Quản trị.</p>
   </section>;
 }
 
