@@ -4,10 +4,12 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import {
   VAULT_AUTO_LOCK_MS,
   countVaultRecords,
+  restoreVaultBackup,
   setupVault,
   unlockVault,
   vaultConfigured,
   vaultRuntimeSupported,
+  type VaultEncryptedBackupV1,
   type VaultStatus,
 } from "./health-secure-vault";
 
@@ -21,6 +23,7 @@ type SecureVaultSessionValue = {
   lockReason: VaultLockReason | null;
   setup: (pin: string) => Promise<void>;
   unlock: (pin: string) => Promise<void>;
+  restoreFromBackup: (backup: VaultEncryptedBackupV1, pin: string) => Promise<number>;
   lock: (reason?: VaultLockReason) => void;
   refreshRecordCount: () => Promise<void>;
 };
@@ -93,6 +96,15 @@ export function SecureVaultSessionProvider({ profileId, children }: { profileId:
     setStatus("unlocked");
   }, [profileId]);
 
+  const restoreFromBackup = useCallback(async (backup: VaultEncryptedBackupV1, pin: string) => {
+    const restored = await restoreVaultBackup(profileId, pin, backup);
+    setKey(restored.key);
+    setRecordCount(restored.importedCount);
+    setLockReason(null);
+    setStatus("unlocked");
+    return restored.importedCount;
+  }, [profileId]);
+
   const refreshRecordCount = useCallback(async () => {
     if (!key || status !== "unlocked") {
       setRecordCount(null);
@@ -109,9 +121,10 @@ export function SecureVaultSessionProvider({ profileId, children }: { profileId:
     lockReason,
     setup,
     unlock,
+    restoreFromBackup,
     lock,
     refreshRecordCount,
-  }), [key, lock, lockReason, profileId, recordCount, refreshRecordCount, setup, status, unlock]);
+  }), [key, lock, lockReason, profileId, recordCount, refreshRecordCount, restoreFromBackup, setup, status, unlock]);
 
   return <SecureVaultSessionContext.Provider value={value}>{children}</SecureVaultSessionContext.Provider>;
 }
