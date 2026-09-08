@@ -43,11 +43,16 @@ for (const token of [
 for (const token of ["box-shadow: inset", ":focus-visible", "@media (max-width: 760px)", "@media (prefers-reduced-motion: reduce)"]) need(styles, token, "3D/accessibility style");
 
 need(framework, 'import PrivacyCenter from "./privacy-center"', "framework import");
-need(framework, '<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>', "profile-scoped security composition");
+need(framework, "function HealthVaultBoundary({ profileId, children }", "shared profile-scoped Vault boundary helper");
+need(framework, '<SecureVaultSessionProvider key={`vault-session-${profileId}`} profileId={profileId}>', "profile-scoped Vault provider inside shared boundary");
+need(framework, '<HealthVaultBoundary profileId={activeProfileId}>', "active-profile Vault boundary composition");
 need(framework, '<PrivacyCenter profileId={activeProfileId} />', "profile-scoped privacy center");
 need(page, 'import "./privacy-center.css"', "privacy stylesheet");
 
+if (framework.includes('<HealthVaultBoundary profileId={activeProfileId}>')) {
+  throw new Error("Profile Privacy validator phát hiện provider cũ chỉ nằm trong Profile section; phải dùng HealthVaultBoundary chung cho active profile");
+}
 if (/age\s*[>=<]+\s*(13|14|15|16|18)/.test(engine)) throw new Error("Privacy V1 không được hard-code cutoff pháp lý theo tuổi");
 if (engine.includes("fetch(") || engine.includes("/api/control")) throw new Error("Profile privacy policy V1 không được gửi sang Control Plane");
 
-console.log("Profile Privacy V1 PASS: profile-scoped local policy, same-tab propagation, explicit highly-sensitive configuration, viewer roles, no legal-age hard-code, no Admin health-data flow.");
+console.log("Profile Privacy V1 PASS: profile-scoped local policy, shared active-profile Vault boundary, same-tab propagation, explicit highly-sensitive configuration, viewer roles, no legal-age hard-code, no Admin health-data flow.");

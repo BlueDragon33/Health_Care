@@ -37,6 +37,7 @@ import MedicationsAllergies from "./medications-allergies";
 import VitalSignsScreening from "./vital-signs-screening";
 import ChronicConditionsCarePlans from "./chronic-conditions-care-plans";
 import PreventiveCareRecords from "./preventive-care-records";
+import SymptomEpisodeTracking from "./symptom-episode-tracking";
 import PrivateSensitiveNotes from "./private-sensitive-notes";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
 import {
@@ -115,6 +116,10 @@ function SectionHeader({ title, description, aside }: { title: string; descripti
 
 function Empty({ children }: { children: React.ReactNode }) {
   return <div className="hf-empty">{children}</div>;
+}
+
+function HealthVaultBoundary({ profileId, children }: { profileId: string; children: React.ReactNode }) {
+  return profileId ? <SecureVaultSessionProvider key={`vault-session-${profileId}`} profileId={profileId}>{children}</SecureVaultSessionProvider> : <>{children}</>;
 }
 
 function DayToolbar({ dayKey, today, onChange }: { dayKey: string; today: string; onChange: (value: string) => void }) {
@@ -367,6 +372,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         <div className="hf-boundary-card"><span>Ranh giới hệ thống</span><strong>Dữ liệu sức khỏe lưu cục bộ</strong><p>Site Quản trị chỉ điều khiển thiết bị, quyền và policy. Hồ sơ, nhật ký, số đo và bản sao dữ liệu không gửi về Trung tâm.</p></div>
       </aside>
 
+      <HealthVaultBoundary profileId={activeProfileId}>
       <section className="hf-content">
         <div className="hf-topbar"><div><span className="hf-kicker">Theo dõi xuyên suốt · 9 đến hết 18 tuổi</span><h1>Sức khỏe Y tế 9–18 tuổi</h1><small>{profileAge.stage?.label ?? "Nhập ngày sinh để xác định giai đoạn phát triển"}</small></div><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · đã cấp truy cập` : "Đang chờ nội dung"}</div></div>
         {profileRegistry ? <ProfileSwitcher registry={profileRegistry} onSwitch={switchProfile} onCreate={createProfile} onDelete={removeProfile} /> : null}
@@ -437,6 +443,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
           <SectionHeader title="Nhật ký" description="Ghi cảm nhận và triệu chứng theo thời gian. Đây không phải công cụ tự chẩn đoán hoặc tự kê đơn." aside={formatDate(dayKey)} />
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Cảm nhận</span><h3>Hôm nay cảm thấy</h3></div></div><div className="hf-choice-row">{([['good','Khỏe'],['normal','Bình thường'],['unwell','Không khỏe']] as const).map(([value, label]) => <button type="button" key={value} className={day.feeling === value ? "hf-choice is-active" : "hf-choice"} onClick={() => updateDay((current) => ({ ...current, feeling: value }))}>{label}</button>)}</div></section>
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Triệu chứng</span><h3>Ghi nhanh</h3></div></div><div className="hf-chip-grid">{symptoms.map((item) => <button type="button" key={item} className={day.symptoms.includes(item) ? "hf-chip is-active" : "hf-chip"} onClick={() => updateDay((current) => ({ ...current, symptoms: current.symptoms.includes(item) ? current.symptoms.filter((value) => value !== item) : [...current.symptoms, item] }))}>{item}</button>)}</div><label className="hf-textarea-label">Ghi chú<textarea value={day.journalNote} maxLength={1200} onChange={(event) => updateDay((current) => ({ ...current, journalNote: event.target.value }))} placeholder="Diễn biến, thời điểm xuất hiện hoặc điều cần nhớ…" /></label><div className="hf-safety-note"><strong>Khi có dấu hiệu nghiêm trọng hoặc tình trạng xấu đi rõ rệt:</strong> không dựa vào nhật ký để tự xử trí; cần liên hệ cơ sở y tế phù hợp.</div></section>
+          {activeProfileId ? <SymptomEpisodeTracking /> : null}
           <HealthTimeline state={state} endDate={dayKey} />
         </section> : null}
 
@@ -446,7 +453,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hồ sơ</span><h3>Thông tin cơ bản</h3></div><span className={profileAge.inScope === false ? "hf-scope-badge is-warning" : "hf-scope-badge"}>{profileAge.text}</span></div><div className="hf-form-grid"><label>Tên / tên gọi<input value={state.profile.name} maxLength={80} onChange={(event) => updateProfile({ name: event.target.value })} /></label><label>Ngày sinh<input type="date" max={today} value={state.profile.birthDate} onChange={(event) => updateProfile({ birthDate: event.target.value })} /></label><label>Giới tính dùng cho biểu đồ tăng trưởng<select value={state.profile.sex} onChange={(event) => updateProfile({ sex: event.target.value as "male" | "female" | "" })}><option value="">Chưa chọn</option><option value="male">Nam</option><option value="female">Nữ</option></select></label></div>{profileAge.inScope === false ? <div className="hf-age-warning">Hồ sơ hiện nằm ngoài phạm vi 9–18 tuổi. Ứng dụng vẫn bảo toàn dữ liệu, nhưng không tự áp khuyến nghị hoặc đánh giá tăng trưởng ngoài phạm vi đã kiểm định.</div> : null}{profileAge.stage ? <div className="hf-local-badge">{profileAge.stage.label}</div> : null}<label className="hf-textarea-label">Ghi chú cần nhớ<textarea value={state.profile.note} maxLength={800} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, note: event.target.value } }))} /></label><div className="hf-local-badge">Chỉ lưu trong trình duyệt hiện tại · không gửi hồ sơ này sang Site Quản trị.</div></section>
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Lộ trình 9–18</span><h3>4 giai đoạn liên tục</h3></div></div><div className="hf-entry-list">{HEALTH_AGE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.stage?.id ? "Hiện tại" : "Giai đoạn"}</span><strong>{stage.label}</strong><small>{stage.focus.join(" · ")}</small></article>)}</div></section>
           </div>
-          {activeProfileId ? <SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>
+          {activeProfileId ? <>
             <PrivacyCenter profileId={activeProfileId} />
             <SecureVaultCenter />
             <SecureVaultBackupCenter />
@@ -455,7 +462,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <ChronicConditionsCarePlans />
             <PreventiveCareRecords />
             <PrivateSensitiveNotes />
-          </SecureVaultSessionProvider> : null}
+          </> : null}
           <div className="hf-work-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Thông báo trình duyệt</span><h3>{notificationPermission === "granted" ? "Đã cho phép" : notificationPermission === "denied" ? "Đã bị trình duyệt chặn" : notificationPermission === "unsupported" ? "Không được hỗ trợ" : "Chưa cho phép"}</h3></div></div><p className="hf-muted">Thông báo lặp được kiểm tra khi Web App đang hoạt động. Để nhắc đáng tin cậy khi ứng dụng đóng, dùng file .ics hoặc Calendar.</p><button className="hf-secondary" type="button" disabled={notificationPermission === "unsupported"} onClick={() => void requestNotifications()}>Yêu cầu quyền thông báo</button></section>
             <section className="hf-panel hf-info-panel"><span className="hf-kicker">Chuyển tiếp 16–18</span><h3>Chuẩn bị tự quản lý sức khỏe khi vào đại học</h3><p>Giai đoạn cuối ưu tiên hiểu hồ sơ cá nhân, biết lịch khám/nhắc việc, duy trì thói quen và nhận biết khi nào cần tìm trợ giúp chuyên môn. Quyền truy cập và dữ liệu vẫn tuân theo kiến trúc thiết bị hiện tại.</p></section>
@@ -464,6 +471,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
           <ReminderManager state={state} setState={setState} calendarEnabled={device.calendarEnabled} />
         </section> : null}
       </section>
+      </HealthVaultBoundary>
     </div>
 
     <nav className="hf-bottom-nav" aria-label="Điều hướng nhanh trên thiết bị nhỏ">{navigation.map((item) => <button key={item.id} type="button" className={active === item.id ? "is-active" : ""} onClick={() => setActive(item.id)}><span>{item.short}</span><strong>{item.label}</strong></button>)}</nav>

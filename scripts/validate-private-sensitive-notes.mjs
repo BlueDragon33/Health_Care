@@ -83,7 +83,9 @@ for (const token of [
 
 for (const token of [
   'import PrivateSensitiveNotes from "./private-sensitive-notes"',
-  '<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>',
+  'function HealthVaultBoundary({ profileId, children }',
+  '<SecureVaultSessionProvider key={`vault-session-${profileId}`} profileId={profileId}>',
+  '<HealthVaultBoundary profileId={activeProfileId}>',
   '<PrivacyCenter profileId={activeProfileId} />',
   '<SecureVaultCenter />',
   '<PrivateSensitiveNotes />',
@@ -99,4 +101,4 @@ for (const token of [
   "@media (prefers-reduced-motion: reduce)",
 ]) need(styles, token, "3D/accessibility style");
 
-console.log("Private Sensitive Notes V1 PASS: shared sensitive-domain access hook enforces Profile Privacy + viewer permission + active-profile unlocked Vault; plaintext baseline/network/Admin fallbacks remain absent.");
+console.log("Private Sensitive Notes V1 PASS: shared sensitive-domain access hook enforces Profile Privacy + viewer permission + shared active-profile unlocked Vault; plaintext baseline/network/Admin fallbacks remain absent.");

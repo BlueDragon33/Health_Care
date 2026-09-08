@@ -97,7 +97,7 @@ for (const token of [
 
 for (const token of [
   'import MedicationsAllergies from "./medications-allergies"',
-  '<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>',
+  '<HealthVaultBoundary profileId={activeProfileId}>',
   '<SecureVaultBackupCenter />',
   '<MedicationsAllergies />',
   '<PrivateSensitiveNotes />',

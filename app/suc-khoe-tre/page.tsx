@@ -14,6 +14,7 @@ import "./medications-allergies.css";
 import "./vital-signs-screening.css";
 import "./chronic-conditions-care-plans.css";
 import "./preventive-care-records.css";
+import "./symptom-episode-tracking.css";
 import "./private-sensitive-notes.css";
 import "./control-plane.css";
 
