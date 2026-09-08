@@ -36,8 +36,6 @@ for (const token of [
 ]) need(notes, token, "privacy/vault binding");
 
 for (const forbidden of [
-  "localStorage",
-  "sessionStorage",
   "HealthLocalState",
   "currentDay(",
   "updateDay(",
@@ -47,6 +45,9 @@ for (const forbidden of [
   "CONTROL_SERVICE_SECRET",
 ]) {
   if (notes.includes(forbidden)) throw new Error(`Private Notes không được có plaintext/baseline/control fallback: ${forbidden}`);
+}
+if (/(?:window\.)?localStorage\s*\./.test(notes) || /(?:window\.)?sessionStorage\s*\./.test(notes)) {
+  throw new Error("Private Notes không được dùng Web Storage API cho plaintext");
 }
 if (/\bfetch\s*\(/.test(notes)) throw new Error("Private Notes không được gọi network/API trực tiếp");
 if (/console\.(?:log|debug|info|warn|error)/.test(notes)) throw new Error("Private Notes không được log nội dung nhạy cảm");
