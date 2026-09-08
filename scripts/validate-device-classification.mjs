@@ -33,6 +33,17 @@ const required = {
     "device-review-v1",
     "healthDataInControlPlane",
   ],
+  "app/api/control/status/route.ts": [
+    "HEALTH_BUILD_REVISION",
+    "HEALTH_BUILD_SOURCE",
+    "buildRevision",
+    "buildSource",
+  ],
+  ".github/workflows/deploy.yml": [
+    "workflow_dispatch",
+    "HEALTH_BUILD_REVISION:${GITHUB_SHA}",
+    "HEALTH_BUILD_SOURCE:BlueDragon33/Health_Care",
+  ],
   "app/api/control/devices/route.ts": [
     "classificationConfidence",
     "classificationReason",
@@ -71,4 +82,4 @@ for (const [file, tokens] of Object.entries(required)) {
   }
 }
 
-console.log("Device management V3 PASS: classification, review, canonical app identity and capability negotiation are aligned.");
+console.log("Device management V3 PASS: classification, review, canonical identity, capabilities and deployed revision contract are aligned.");
