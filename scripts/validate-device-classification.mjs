@@ -20,6 +20,10 @@ const required = {
     "touchPoints",
     "mobileHint",
     "pwaMode",
+    "detectedDeviceType",
+    "deviceTypeOverride",
+    "environmentChanged",
+    "site_device_environment_changed",
   ],
   "app/api/control/devices/route.ts": [
     "classificationConfidence",
@@ -28,6 +32,12 @@ const required = {
     "osName",
     "browserVersion",
     "pwaMode",
+    "autoLabel",
+    "detectedDeviceType",
+    "deviceTypeOverride",
+    "set-device-type",
+    "clear-device-type",
+    "ack-environment",
   ],
   "drizzle/0004_device_metadata_v2.sql": [
     "installation_id",
@@ -36,6 +46,13 @@ const required = {
     "classification_confidence",
     "classification_reason",
     "metadata_updated_at",
+  ],
+  "drizzle/0005_device_management_review.sql": [
+    "detected_device_type",
+    "device_type_override",
+    "device_type_override_by",
+    "environment_changed",
+    "environment_change_reason",
   ],
 };
 
@@ -46,4 +63,4 @@ for (const [file, tokens] of Object.entries(required)) {
   }
 }
 
-console.log("Device auto-classification V2 PASS: enrollment metadata, server classification, D1 schema and Control API are aligned.");
+console.log("Device management V3 PASS: auto classification, review flags, manual override and Control API are aligned.");
