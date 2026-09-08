@@ -39,13 +39,14 @@ jobs:
           npm run validate:growth
           npm run validate:framework
           npm run validate:device
+          npm run validate:control
           npm run lint
           npm run build
 
       - name: Cloudflare credentials not configured
         if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
         run: |
-          echo '::warning::Health_Care is separated and validated, but Cloudflare deployment is skipped because this new repository does not yet have CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets.'
+          echo '::warning::Health_Care is separated and validated, but Cloudflare deployment is skipped because this repository does not yet have CLOUDFLARE_API_TOKEN / CLOUDFLARE_ACCOUNT_ID secrets.'
           echo 'The existing production Worker remains untouched.'
           echo 'After credentials are added, run this workflow manually or rerun the latest deployment.'
 
