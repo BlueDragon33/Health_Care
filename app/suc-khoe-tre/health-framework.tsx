@@ -141,6 +141,9 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
   const [backupNotice, setBackupNotice] = useState("");
 
+  const activeProfileId = profileRegistry?.activeProfileId ?? "";
+  const activeProfileIdentity = profileRegistry?.profiles.find((item) => item.id === activeProfileId) ?? null;
+
   const [growthDate, setGrowthDate] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [weightKg, setWeightKg] = useState("");
@@ -209,9 +212,6 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     candidates.sort((a, b) => a.date.getTime() - b.date.getTime());
     return candidates[0] ?? null;
   }, [state.reminders]);
-
-  const activeProfileId = profileRegistry?.activeProfileId ?? "";
-  const activeProfileIdentity = profileRegistry?.profiles.find((item) => item.id === activeProfileId) ?? null;
 
   function updateProfile(patch: Partial<HealthProfile>) {
     const nextProfile = { ...state.profile, ...patch };
