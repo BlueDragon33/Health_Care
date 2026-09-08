@@ -1,0 +1,351 @@
+.vss {
+  margin-top: 22px;
+  border: 1px solid rgba(20, 84, 64, 0.16);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 42px rgba(25, 73, 58, 0.08);
+  overflow: hidden;
+}
+
+.vss-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px;
+  background: linear-gradient(135deg, rgba(232, 247, 240, 0.96), rgba(255, 250, 237, 0.96));
+  border-bottom: 1px solid rgba(20, 84, 64, 0.12);
+}
+
+.vss-head h3,
+.vss-panel h4 {
+  margin: 5px 0 8px;
+}
+
+.vss-head p,
+.vss-panel-head p,
+.vss-footnote {
+  margin: 0;
+  line-height: 1.6;
+  color: #53645f;
+}
+
+.vss-state {
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 4px;
+  text-align: right;
+}
+
+.vss-state strong {
+  color: #174f3f;
+}
+
+.vss-state span {
+  font-size: 13px;
+  color: #697a74;
+}
+
+.vss-lock,
+.vss-notice {
+  margin: 20px 24px 0;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f4f7f5;
+  border: 1px solid rgba(32, 82, 66, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vss-lock.is-warning {
+  background: #fff8e7;
+  border-color: rgba(159, 105, 20, 0.24);
+}
+
+.vss-switch {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 22px 24px 0;
+}
+
+.vss-switch button {
+  border: 1px solid rgba(28, 88, 69, 0.18);
+  border-radius: 17px;
+  background: linear-gradient(180deg, #ffffff, #eef7f2);
+  box-shadow: 0 7px 0 #c9ddd4, 0 11px 18px rgba(29, 76, 62, 0.11);
+  padding: 14px 15px 12px;
+  min-height: 72px;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+  transform: translateY(0);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.vss-switch button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 9px 0 #c9ddd4, 0 14px 22px rgba(29, 76, 62, 0.13);
+}
+
+.vss-switch button:active {
+  transform: translateY(6px);
+  box-shadow: inset 0 2px 5px rgba(24, 77, 60, 0.2), 0 1px 0 #c9ddd4;
+}
+
+.vss-switch button.is-selected {
+  background: linear-gradient(180deg, #dff4e9, #cae8d9);
+  box-shadow: inset 0 3px 7px rgba(24, 77, 60, 0.2), 0 2px 0 #b8d5c7;
+  transform: translateY(5px);
+}
+
+.vss-switch button:focus-visible,
+.vss button:focus-visible,
+.vss input:focus-visible,
+.vss select:focus-visible,
+.vss textarea:focus-visible {
+  outline: 3px solid rgba(40, 113, 88, 0.35);
+  outline-offset: 3px;
+}
+
+.vss-switch small {
+  color: #6b7d76;
+}
+
+.vss-panel {
+  margin: 26px 24px 0;
+  padding: 20px;
+  border: 1px solid rgba(28, 88, 69, 0.12);
+  border-radius: 20px;
+  background: #fbfdfc;
+}
+
+.vss-panel-head,
+.vss-list-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.vss-panel-head > span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: #edf6f1;
+  color: #356253;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.vss-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.vss-grid label,
+.vss-wide {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #34564b;
+}
+
+.vss input,
+.vss select,
+.vss textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(38, 91, 74, 0.2);
+  border-radius: 12px;
+  background: #fff;
+  padding: 11px 12px;
+  font: inherit;
+  color: #203c33;
+}
+
+.vss input[readonly] {
+  background: #f2f6f4;
+  color: #53645f;
+}
+
+.vss textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.vss-wide {
+  margin-top: 14px;
+}
+
+.vss-save {
+  margin-top: 14px;
+  min-height: 44px;
+  box-shadow: 0 5px 0 rgba(24, 91, 69, 0.28), 0 9px 16px rgba(24, 91, 69, 0.12);
+  transition: transform 120ms ease, box-shadow 120ms ease;
+}
+
+.vss-save:active {
+  transform: translateY(4px);
+  box-shadow: inset 0 2px 5px rgba(15, 64, 49, 0.24), 0 1px 0 rgba(24, 91, 69, 0.22);
+}
+
+.vss-list {
+  margin: 20px 24px 0;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f8fbf9;
+  border: 1px solid rgba(28, 88, 69, 0.1);
+}
+
+.vss-list-head {
+  margin-bottom: 10px;
+}
+
+.vss-list-head span {
+  font-size: 13px;
+  color: #718079;
+}
+
+.vss-list article {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid rgba(28, 88, 69, 0.1);
+}
+
+.vss-list article:first-of-type {
+  border-top: 0;
+}
+
+.vss-list article > div {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.vss-list article small,
+.vss-list article span {
+  color: #6b7c75;
+  line-height: 1.45;
+}
+
+.vss-list article strong {
+  color: #244d40;
+}
+
+.vss-list article p {
+  margin: 2px 0;
+  font-weight: 700;
+  color: #1d3d33;
+}
+
+.vss-list article button {
+  align-self: center;
+  border: 1px solid rgba(145, 57, 57, 0.18);
+  border-radius: 10px;
+  background: #fff;
+  color: #8b3a3a;
+  padding: 8px 10px;
+  cursor: pointer;
+}
+
+.vss-empty {
+  padding: 18px 0 8px;
+  color: #74827d;
+}
+
+.vss-notice {
+  color: #31584b;
+  background: #eef8f2;
+}
+
+.vss-footnote {
+  padding: 18px 24px 24px;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .vss-head {
+    flex-direction: column;
+  }
+
+  .vss-state {
+    min-width: 0;
+    align-items: flex-start;
+    text-align: left;
+  }
+
+  .vss-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .vss-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .vss {
+    border-radius: 18px;
+  }
+
+  .vss-head,
+  .vss-switch {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .vss-panel,
+  .vss-list,
+  .vss-lock,
+  .vss-notice {
+    margin-left: 16px;
+    margin-right: 16px;
+  }
+
+  .vss-panel {
+    padding: 16px;
+  }
+
+  .vss-panel-head,
+  .vss-list-head,
+  .vss-list article {
+    align-items: flex-start;
+  }
+
+  .vss-panel-head,
+  .vss-list-head {
+    flex-direction: column;
+  }
+
+  .vss-list article {
+    flex-direction: column;
+  }
+
+  .vss-list article button {
+    align-self: flex-start;
+  }
+
+  .vss-footnote {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vss-switch button,
+  .vss-save {
+    transition: none;
+  }
+}

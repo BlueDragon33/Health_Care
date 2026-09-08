@@ -11,6 +11,7 @@ import "./privacy-center.css";
 import "./secure-vault-center.css";
 import "./secure-vault-backup-center.css";
 import "./medications-allergies.css";
+import "./vital-signs-screening.css";
 import "./private-sensitive-notes.css";
 import "./control-plane.css";
 
