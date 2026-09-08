@@ -1,0 +1,235 @@
+.attention-queue {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid rgba(37, 82, 66, 0.13);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 15px 36px rgba(36, 69, 57, 0.08);
+}
+
+.attention-head,
+.attention-completeness-head,
+.attention-list article {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.attention-head h3 {
+  margin: 4px 0 6px;
+  font-size: 1.24rem;
+}
+
+.attention-head p,
+.attention-boundary,
+.attention-empty span,
+.attention-completeness-head small {
+  margin: 0;
+  color: rgba(35, 61, 52, 0.7);
+  line-height: 1.5;
+}
+
+.attention-counts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(120px, 1fr));
+  gap: 8px;
+  min-width: 270px;
+}
+
+.attention-counts span {
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #f5f9f5;
+  border: 1px solid rgba(39, 84, 66, 0.1);
+  font-size: 0.8rem;
+  color: #3a5a4f;
+}
+
+.attention-counts strong {
+  display: block;
+  font-size: 1.2rem;
+  color: #1f4437;
+}
+
+.attention-completeness {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 18px;
+  background: #f7faf6;
+}
+
+.attention-completeness-head > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.attention-completeness-head span,
+.attention-completeness-head strong {
+  font-weight: 800;
+  color: #2a5042;
+}
+
+.attention-progress {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(43, 88, 68, 0.1);
+}
+
+.attention-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7ba48c, #4f8069);
+}
+
+.attention-checks {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.attention-checks button,
+.attention-list article > button {
+  border: 1px solid rgba(42, 84, 68, 0.16);
+  border-radius: 13px;
+  background: #fff;
+  color: #2b5143;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(39, 79, 63, 0.13), 0 8px 18px rgba(40, 70, 59, 0.08);
+  transform: translateY(0);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.attention-checks button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+  text-align: left;
+}
+
+.attention-checks button.is-complete {
+  background: #eaf4ed;
+}
+
+.attention-checks button:hover,
+.attention-list article > button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(39, 79, 63, 0.11), 0 12px 20px rgba(40, 70, 59, 0.1);
+}
+
+.attention-checks button:active,
+.attention-list article > button:active {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 7px rgba(39, 79, 63, 0.17), 0 1px 0 rgba(39, 79, 63, 0.1);
+}
+
+.attention-checks button:focus-visible,
+.attention-list article > button:focus-visible {
+  outline: 3px solid rgba(69, 124, 98, 0.27);
+  outline-offset: 3px;
+}
+
+.attention-list {
+  display: grid;
+  gap: 9px;
+}
+
+.attention-list article {
+  padding: 13px 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(41, 80, 65, 0.11);
+  background: #fbfdfa;
+}
+
+.attention-list article.priority-due {
+  border-color: rgba(158, 113, 34, 0.24);
+  background: #fffaf0;
+}
+
+.attention-list article > div > span,
+.attention-list article > div > small {
+  display: block;
+}
+
+.attention-list article > div > span {
+  color: rgba(47, 73, 64, 0.65);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.attention-list article > div > strong {
+  display: block;
+  margin: 3px 0;
+}
+
+.attention-list article > div > small {
+  color: rgba(47, 73, 64, 0.68);
+}
+
+.attention-list article > button {
+  padding: 9px 12px;
+  align-self: center;
+}
+
+.attention-empty {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border-radius: 16px;
+  background: #f7faf6;
+}
+
+.attention-boundary {
+  font-size: 0.84rem;
+}
+
+@media (max-width: 850px) {
+  .attention-head {
+    display: grid;
+  }
+
+  .attention-counts {
+    min-width: 0;
+  }
+
+  .attention-checks {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .attention-queue {
+    padding: 15px;
+    border-radius: 19px;
+  }
+
+  .attention-counts,
+  .attention-checks {
+    grid-template-columns: 1fr;
+  }
+
+  .attention-list article,
+  .attention-completeness-head {
+    display: grid;
+  }
+
+  .attention-list article > button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .attention-checks button,
+  .attention-list article > button {
+    transition: none;
+  }
+}
