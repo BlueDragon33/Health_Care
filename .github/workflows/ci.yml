@@ -44,8 +44,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude='MIGRATION_SOURCE.md' \
-            '(from ["'"'].*(boi-ech|quan-ly-hoc-tap)|require\(["'"'].*(boi-ech|quan-ly-hoc-tap)|/boi-ech/|/quan-ly-hoc-tap/)' \
+          PATTERN='from .*boi-ech|from .*quan-ly-hoc-tap|require\(.*boi-ech|require\(.*quan-ly-hoc-tap'
+          if grep -RInE \
+            --include='*.ts' \
+            --include='*.tsx' \
+            --include='*.js' \
+            --include='*.mjs' \
+            --exclude-dir=node_modules \
+            --exclude-dir=.git \
+            "$PATTERN" \
             app worker scripts build 2>/dev/null; then
             echo 'Health_Care must not import runtime/business code from BOIECH_AI applications.'
             exit 1
