@@ -28,6 +28,21 @@ Không nhúng `/admin`, iframe hay shared router quản trị vào Health_Care. 
 
 Tên Worker/URL được giữ ổn định trong giai đoạn tách repo để không làm đứt kết nối Control Plane. Repo và runtime nghiệp vụ đã tách biệt; đổi domain/worker name là một migration độc lập sau này nếu cần.
 
+## Điều kiện deploy production
+
+Workflow deploy **fail closed** nếu thiếu Cloudflare credentials; trạng thái `success` không được phép xuất hiện khi Worker thực tế chưa được cập nhật.
+
+Trước khi deploy production cần cấu hình:
+
+- GitHub Actions secret `CLOUDFLARE_API_TOKEN` cho repo `Health_Care`;
+- GitHub Actions secret `CLOUDFLARE_ACCOUNT_ID` cho repo `Health_Care`;
+- Cloudflare Worker secret `HEALTH_CONTROL_SERVICE_SECRET` cho Worker Health;
+- cùng secret Health-scoped tương ứng ở Trung tâm Quản trị để phát/kiểm tra vé Control Plane.
+
+Không khôi phục fallback `CONTROL_SERVICE_SECRET`. Nếu secret Health riêng chưa đồng bộ, Control Plane phải báo chưa sẵn sàng thay vì âm thầm dùng secret chung.
+
+Sau deploy, `/api/control/status` phải công bố canonical app `suc-khoe-y-te`, capability `device-review-v1`, `app-scoped-secret-v1`, build revision mới và ranh giới `healthDataInControlPlane=false` trước khi coi kết nối production là hoàn tất.
+
 ## Chạy cục bộ
 
 ```bash
@@ -40,6 +55,8 @@ npm run dev
 ```bash
 npm run validate:growth
 npm run validate:framework
+npm run validate:device
+npm run validate:control
 npm run lint
 npm run build
 ```
