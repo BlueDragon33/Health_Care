@@ -1,0 +1,347 @@
+.medall {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid rgba(33, 91, 67, 0.18);
+  border-radius: 22px;
+  background: rgba(252, 253, 249, 0.97);
+  box-shadow: 0 14px 34px rgba(43, 77, 60, 0.08);
+}
+
+.medall-head,
+.medall-records-head,
+.medall-form-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.medall-head h3,
+.medall-records-head h4,
+.medall-form-head h4 {
+  margin: 4px 0 7px;
+}
+
+.medall-head p,
+.medall-form p,
+.medall-record-copy p,
+.medall-record-copy small,
+.medall-safety span,
+.medall-lock span {
+  color: #5b6d62;
+  line-height: 1.55;
+}
+
+.medall-state {
+  flex: 0 0 auto;
+  display: grid;
+  gap: 3px;
+  max-width: 245px;
+  padding: 9px 11px;
+  border: 1px solid rgba(38, 101, 72, 0.18);
+  border-radius: 14px;
+  background: rgba(235, 247, 239, 0.85);
+  text-align: right;
+}
+
+.medall-state strong {
+  color: #215f43;
+  font-size: 0.82rem;
+}
+
+.medall-state span {
+  color: #617267;
+  font-size: 0.73rem;
+}
+
+.medall-lock {
+  display: grid;
+  gap: 5px;
+  margin-top: 15px;
+  padding: 13px 14px;
+  border: 1px solid rgba(63, 100, 78, 0.15);
+  border-radius: 14px;
+  background: rgba(243, 247, 244, 0.88);
+}
+
+.medall-lock.is-warning {
+  border-color: rgba(167, 112, 37, 0.24);
+  background: rgba(255, 248, 229, 0.88);
+}
+
+.medall-switch {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 17px;
+}
+
+.medall-switch button {
+  display: grid;
+  gap: 3px;
+  min-height: 64px;
+  padding: 12px 14px;
+  border: 1px solid rgba(40, 100, 73, 0.2);
+  border-radius: 15px;
+  background: #f8fbf8;
+  color: #315d49;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 5px 0 rgba(40, 91, 66, 0.15), 0 8px 17px rgba(40, 91, 66, 0.08);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.medall-switch button small {
+  color: #6b796f;
+}
+
+.medall-switch button:hover {
+  transform: translateY(-1px);
+}
+
+.medall-switch button:active,
+.medall-switch button.is-selected {
+  transform: translateY(3px);
+  background: #e9f5ed;
+  box-shadow: inset 0 3px 7px rgba(28, 82, 55, 0.18);
+}
+
+.medall-switch button.is-selected {
+  border-color: rgba(38, 112, 76, 0.34);
+  color: #1f6545;
+}
+
+.medall-form {
+  margin-top: 15px;
+  padding: 16px;
+  border: 1px solid rgba(42, 96, 71, 0.14);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.medall-form-head > span {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: #edf5ef;
+  color: #3e6f57;
+  font-size: 0.73rem;
+  font-weight: 800;
+}
+
+.medall-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+  margin-top: 12px;
+}
+
+.medall-form label,
+.medall-wide {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #3e5d4d;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.medall-form input,
+.medall-form select,
+.medall-form textarea {
+  width: 100%;
+  min-height: 42px;
+  padding: 9px 11px;
+  border: 1px solid rgba(43, 96, 72, 0.22);
+  border-radius: 12px;
+  background: #fff;
+  color: #263d32;
+  font: inherit;
+  font-weight: 500;
+}
+
+.medall-form textarea {
+  min-height: 92px;
+  resize: vertical;
+}
+
+.medall-wide {
+  margin-top: 11px;
+}
+
+.medall-action {
+  min-height: 43px;
+  margin-top: 12px;
+  border-radius: 13px;
+  box-shadow: 0 5px 0 rgba(30, 88, 59, 0.18), 0 8px 17px rgba(30, 88, 59, 0.1);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+
+.medall-action:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.medall-action:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: inset 0 3px 7px rgba(24, 73, 50, 0.2);
+}
+
+.medall-action:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.medall-switch button:focus-visible,
+.medall-action:focus-visible,
+.medall-delete:focus-visible,
+.medall-form input:focus-visible,
+.medall-form select:focus-visible,
+.medall-form textarea:focus-visible {
+  outline: 3px solid rgba(49, 126, 90, 0.28);
+  outline-offset: 3px;
+}
+
+.medall-records {
+  margin-top: 17px;
+}
+
+.medall-records-head > span {
+  color: #5f7468;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.medall-empty {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px dashed rgba(43, 97, 72, 0.2);
+  border-radius: 14px;
+  color: #64756b;
+}
+
+.medall-record {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 13px;
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid rgba(44, 101, 75, 0.14);
+  border-radius: 15px;
+  background: rgba(247, 251, 248, 0.92);
+}
+
+.medall-record.is-allergy {
+  background: rgba(255, 249, 240, 0.9);
+  border-color: rgba(151, 107, 50, 0.16);
+}
+
+.medall-record-copy {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.medall-record-copy > span {
+  color: #43715b;
+  font-size: 0.72rem;
+  font-weight: 900;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.medall-record-copy strong {
+  color: #244b39;
+  overflow-wrap: anywhere;
+}
+
+.medall-record-copy p {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.medall-delete {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 8px 11px;
+  border: 1px solid rgba(151, 70, 58, 0.2);
+  border-radius: 11px;
+  background: #fff7f5;
+  color: #91483d;
+  cursor: pointer;
+}
+
+.medall-notice {
+  margin-top: 14px;
+  padding: 11px 13px;
+  border: 1px solid rgba(35, 105, 73, 0.19);
+  border-radius: 13px;
+  background: rgba(233, 247, 239, 0.85);
+  color: #285d44;
+  line-height: 1.45;
+}
+
+.medall-safety {
+  display: grid;
+  gap: 5px;
+  margin-top: 15px;
+  padding: 13px 14px;
+  border-radius: 14px;
+  background: rgba(245, 247, 242, 0.9);
+}
+
+.medall-safety strong {
+  color: #315640;
+}
+
+@media (max-width: 720px) {
+  .medall-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .medall {
+    padding: 15px;
+    border-radius: 18px;
+  }
+
+  .medall-head,
+  .medall-records-head,
+  .medall-form-head,
+  .medall-record {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .medall-state {
+    justify-self: stretch;
+    max-width: none;
+    text-align: left;
+  }
+
+  .medall-switch {
+    grid-template-columns: 1fr;
+  }
+
+  .medall-delete {
+    justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .medall-switch button,
+  .medall-action {
+    transition: none;
+  }
+
+  .medall-switch button:hover,
+  .medall-switch button:active,
+  .medall-switch button.is-selected,
+  .medall-action:hover:not(:disabled),
+  .medall-action:active:not(:disabled) {
+    transform: none;
+  }
+}
