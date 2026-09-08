@@ -6,10 +6,8 @@ import {
   createInitialHealthState,
   currentDay,
   exportHealthBackup,
-  loadHealthState,
   parseHealthBackup,
   recentDateKeys,
-  saveHealthState,
   shiftDateKey,
   todayKey,
   uid,
@@ -29,6 +27,18 @@ import WeeklyHealthSummary from "./weekly-health-summary";
 import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
 import AttentionQueue from "./attention-queue";
+import ProfileSwitcher from "./profile-switcher";
+import type { HealthProfileRegistry } from "./health-profile-contracts";
+import {
+  createHealthProfile,
+  deleteHealthProfile,
+  loadHealthProfileRegistry,
+  loadHealthProfileState,
+  saveHealthProfileRegistry,
+  saveHealthProfileState,
+  setActiveHealthProfile,
+  syncRegistryIdentity,
+} from "./health-profile-registry";
 
 export type HealthDeviceAccess = {
   deviceCode: string;
@@ -124,6 +134,7 @@ function assessmentLabel(assessment: WhoBmiAssessment | null) {
 export default function HealthFramework({ initialCourse, device }: { initialCourse: unknown; device: HealthDeviceAccess }) {
   const [active, setActive] = useState<SectionId>("today");
   const [state, setState] = useState<HealthLocalState>(() => createInitialHealthState());
+  const [profileRegistry, setProfileRegistry] = useState<HealthProfileRegistry | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const [dayKey, setDayKey] = useState("today");
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission | "unsupported">("default");
@@ -140,7 +151,11 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const today = todayKey();
-      setState(loadHealthState());
+      const registry = loadHealthProfileRegistry();
+      const activeId = registry.activeProfileId ?? registry.profiles[0]?.id;
+      const identity = registry.profiles.find((item) => item.id === activeId);
+      setProfileRegistry(registry);
+      setState(activeId ? loadHealthProfileState(activeId, identity) : createInitialHealthState());
       setDayKey(today);
       setGrowthDate(today);
       setNotificationPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
@@ -150,9 +165,15 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   }, []);
 
   useEffect(() => {
-    if (!hydrated) return;
-    saveHealthState(state);
-  }, [hydrated, state]);
+    if (!hydrated || !profileRegistry?.activeProfileId) return;
+    const activeId = profileRegistry.activeProfileId;
+    saveHealthProfileState(activeId, state);
+    const synced = syncRegistryIdentity(profileRegistry, activeId, state.profile);
+    if (synced !== profileRegistry) {
+      saveHealthProfileRegistry(synced);
+      setProfileRegistry(synced);
+    }
+  }, [hydrated, profileRegistry, state]);
 
   useEffect(() => {
     if (!hydrated || notificationPermission !== "granted" || typeof Notification === "undefined") return;
@@ -188,6 +209,55 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     candidates.sort((a, b) => a.date.getTime() - b.date.getTime());
     return candidates[0] ?? null;
   }, [state.reminders]);
+
+  const activeProfileId = profileRegistry?.activeProfileId ?? "";
+  const activeProfileIdentity = profileRegistry?.profiles.find((item) => item.id === activeProfileId) ?? null;
+
+  function switchProfile(profileId: string) {
+    if (!profileRegistry || !profileId || profileId === activeProfileId) return;
+    if (activeProfileId) saveHealthProfileState(activeProfileId, state);
+    const nextRegistry = setActiveHealthProfile(profileRegistry, profileId);
+    const identity = nextRegistry.profiles.find((item) => item.id === profileId);
+    saveHealthProfileRegistry(nextRegistry);
+    setProfileRegistry(nextRegistry);
+    setState(loadHealthProfileState(profileId, identity));
+    const currentToday = todayKey();
+    setDayKey(currentToday);
+    setGrowthDate(currentToday);
+    setBackupNotice("");
+  }
+
+  function createProfile(displayName: string) {
+    if (!profileRegistry) return;
+    if (activeProfileId) saveHealthProfileState(activeProfileId, state);
+    const created = createHealthProfile(profileRegistry, displayName);
+    if (!created) {
+      setBackupNotice("Đã đạt giới hạn hồ sơ trên thiết bị này.");
+      return;
+    }
+    setProfileRegistry(created.registry);
+    setState(created.state);
+    const currentToday = todayKey();
+    setDayKey(currentToday);
+    setGrowthDate(currentToday);
+    setBackupNotice(`Đã tạo hồ sơ riêng “${created.state.profile.name}”.`);
+  }
+
+  function removeProfile(profileId: string) {
+    if (!profileRegistry) return;
+    const wasActive = profileId === activeProfileId;
+    const nextRegistry = deleteHealthProfile(profileRegistry, profileId);
+    if (!nextRegistry) return;
+    setProfileRegistry(nextRegistry);
+    if (wasActive && nextRegistry.activeProfileId) {
+      const identity = nextRegistry.profiles.find((item) => item.id === nextRegistry.activeProfileId);
+      setState(loadHealthProfileState(nextRegistry.activeProfileId, identity));
+      const currentToday = todayKey();
+      setDayKey(currentToday);
+      setGrowthDate(currentToday);
+    }
+    setBackupNotice("Đã xóa hồ sơ được chọn trên thiết bị. Các hồ sơ khác không bị thay đổi.");
+  }
 
   function assessmentFor(entry: GrowthEntry) {
     return assessWhoBmiForAge({ birthDate: state.profile.birthDate, measurementDate: entry.date, sex: state.profile.sex, heightCm: entry.heightCm, weightKg: entry.weightKg });
@@ -243,13 +313,14 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     const blob = new Blob([content], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
+    const profileSlug = (activeProfileIdentity?.displayName || "ho-so").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "ho-so";
     anchor.href = url;
-    anchor.download = `suc-khoe-y-te-9-18-backup-${today}.json`;
+    anchor.download = `suc-khoe-y-te-${profileSlug}-backup-${today}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setBackupNotice("Đã tạo bản sao dữ liệu cục bộ 9–18 tuổi. Hãy lưu tệp ở nơi an toàn.");
+    setBackupNotice(`Đã tạo bản sao riêng cho hồ sơ “${activeProfileIdentity?.displayName ?? state.profile.name || "đang chọn"}”.`);
   }
 
   async function importBackup(event: ChangeEvent<HTMLInputElement>) {
@@ -261,7 +332,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
       const imported = parseHealthBackup(JSON.parse(await file.text()));
       setState(imported);
       setDayKey(today);
-      setBackupNotice("Đã khôi phục bản sao. Bản sao 9–10 cũ cũng được hỗ trợ và tự di trú.");
+      setBackupNotice("Đã khôi phục bản sao vào riêng hồ sơ đang chọn. Hồ sơ khác không bị thay đổi; bản sao 9–10 cũ vẫn được hỗ trợ.");
     } catch (error) {
       setBackupNotice(error instanceof Error ? error.message : "Không thể đọc tệp sao lưu.");
     }
@@ -277,6 +348,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
       <section className="hf-content">
         <div className="hf-topbar"><div><span className="hf-kicker">Theo dõi xuyên suốt · 9 đến hết 18 tuổi</span><h1>Sức khỏe Y tế 9–18 tuổi</h1><small>{profileAge.stage?.label ?? "Nhập ngày sinh để xác định giai đoạn phát triển"}</small></div><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · đã cấp truy cập` : "Đang chờ nội dung"}</div></div>
+        {profileRegistry ? <ProfileSwitcher registry={profileRegistry} onSwitch={switchProfile} onCreate={createProfile} onDelete={removeProfile} /> : null}
         {dailySections.includes(active) ? <DayToolbar dayKey={dayKey} today={today} onChange={setDayKey} /> : null}
 
         {active === "today" ? <section className="hf-section">
@@ -286,7 +358,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>
             <article className="hf-next-card"><span>Việc tiếp theo</span><strong>{nextReminder?.reminder.title ?? "Chưa có nhắc việc"}</strong><p>{nextReminder ? `${formatDateTime(nextReminder.date)} · ${repeatLabels[nextReminder.reminder.repeat]}` : "Tạo nhắc việc trong Hồ sơ → Lịch & nhắc việc."}</p></article>
           </div>
-          <AttentionQueue state={state} onNavigate={(target) => setActive(target)} />
+          {activeProfileId ? <AttentionQueue state={state} profileId={activeProfileId} onNavigate={(target) => setActive(target)} /> : null}
           <div className="hf-dashboard-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayTasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div></section>
             <aside className="hf-quick-column">
@@ -357,7 +429,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Thông báo trình duyệt</span><h3>{notificationPermission === "granted" ? "Đã cho phép" : notificationPermission === "denied" ? "Đã bị trình duyệt chặn" : notificationPermission === "unsupported" ? "Không được hỗ trợ" : "Chưa cho phép"}</h3></div></div><p className="hf-muted">Thông báo lặp được kiểm tra khi Web App đang hoạt động. Để nhắc đáng tin cậy khi ứng dụng đóng, dùng file .ics hoặc Calendar.</p><button className="hf-secondary" type="button" disabled={notificationPermission === "unsupported"} onClick={() => void requestNotifications()}>Yêu cầu quyền thông báo</button></section>
             <section className="hf-panel hf-info-panel"><span className="hf-kicker">Chuyển tiếp 16–18</span><h3>Chuẩn bị tự quản lý sức khỏe khi vào đại học</h3><p>Giai đoạn cuối ưu tiên hiểu hồ sơ cá nhân, biết lịch khám/nhắc việc, duy trì thói quen và nhận biết khi nào cần tìm trợ giúp chuyên môn. Quyền truy cập và dữ liệu vẫn tuân theo kiến trúc thiết bị hiện tại.</p></section>
           </div>
-          <section className="hf-panel hf-backup-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Sao lưu local-first</span><h3>Xuất / khôi phục dữ liệu thiết bị</h3><p className="hf-muted">Bản 9–18 đọc được cả tệp sao lưu 9–10 cũ. Việc di trú chỉ sao chép sang khóa lưu trữ mới, không xóa dữ liệu cũ.</p></div></div><div className="hf-backup-actions"><button type="button" className="hf-primary" onClick={downloadBackup}>Xuất bản sao JSON</button><label className="hf-file-button">Khôi phục từ bản sao<input type="file" accept="application/json,.json" onChange={(event) => void importBackup(event)} /></label></div>{backupNotice ? <div className="hf-backup-notice" role="status">{backupNotice}</div> : null}</section>
+          <section className="hf-panel hf-backup-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Sao lưu local-first</span><h3>Xuất / khôi phục dữ liệu thiết bị</h3><p className="hf-muted">Xuất/khôi phục mặc định chỉ tác động hồ sơ đang chọn. Bản 9–18 vẫn đọc được tệp sao lưu 9–10 cũ; dữ liệu legacy được giữ để rollback.</p></div></div><div className="hf-backup-actions"><button type="button" className="hf-primary" onClick={downloadBackup}>Xuất bản sao JSON</button><label className="hf-file-button">Khôi phục từ bản sao<input type="file" accept="application/json,.json" onChange={(event) => void importBackup(event)} /></label></div>{backupNotice ? <div className="hf-backup-notice" role="status">{backupNotice}</div> : null}</section>
           <ReminderManager state={state} setState={setState} calendarEnabled={device.calendarEnabled} />
         </section> : null}
       </section>
