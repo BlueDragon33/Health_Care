@@ -47,7 +47,7 @@ for (const token of [
   'import ProfileSwitcher from "./profile-switcher"',
   "loadHealthProfileRegistry()",
   "loadHealthProfileState(activeId",
-  "saveHealthProfileState(activeId, state)",
+  "saveHealthProfileState(activeProfileId, state)",
   "function switchProfile(profileId: string)",
   "function createProfile(displayName: string)",
   "function removeProfile(profileId: string)",
