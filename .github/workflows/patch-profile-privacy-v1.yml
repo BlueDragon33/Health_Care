@@ -1,0 +1,28 @@
+name: Patch Profile Privacy V1
+
+on:
+  push:
+    branches:
+      - feature/profile-privacy-engine-v1
+    paths:
+      - .profile-privacy-v1-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/profile-privacy-engine-v1
+      - name: Integrate privacy center
+        run: python .github/scripts/patch-profile-privacy-v1.py
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx
+          git diff --cached --quiet || git commit -m "feat(privacy): integrate profile privacy center"
+          git push
