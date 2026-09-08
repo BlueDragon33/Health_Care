@@ -29,6 +29,7 @@ import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
+import PremiumQuickActions from "./premium-quick-actions";
 import PrivacyCenter from "./privacy-center";
 import SecureVaultCenter from "./secure-vault-center";
 import SecureVaultBackupCenter from "./secure-vault-backup-center";
@@ -368,12 +369,13 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
       </aside>
 
       <section className="hf-content">
-        <div className="hf-topbar"><div><span className="hf-kicker">Theo dõi xuyên suốt · 9 đến hết 18 tuổi</span><h1>Sức khỏe Y tế 9–18 tuổi</h1><small>{profileAge.stage?.label ?? "Nhập ngày sinh để xác định giai đoạn phát triển"}</small></div><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · đã cấp truy cập` : "Đang chờ nội dung"}</div></div>
+        <div className="hf-topbar"><div><span className="hf-kicker">Health Care · Vì một thế hệ khỏe mạnh hơn</span><h1>{state.profile.name ? `Xin chào, ${state.profile.name}!` : "Sức khỏe Y tế 9–18 tuổi"}</h1><small>{profileAge.stage?.label ? `${profileAge.stage.label} · Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.` : "Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai."}</small></div><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · thiết bị đã được quản trị` : "Đang chờ nội dung"}</div></div>
         {profileRegistry ? <ProfileSwitcher registry={profileRegistry} onSwitch={switchProfile} onCreate={createProfile} onDelete={removeProfile} /> : null}
         {dailySections.includes(active) ? <DayToolbar dayKey={dayKey} today={today} onChange={setDayKey} /> : null}
 
         {active === "today" ? <section className="hf-section">
           <SectionHeader title={dayKey === today ? "Hôm nay" : "Ngày đã chọn"} description="Checklist, tiến độ và nhắc việc được giữ liên tục khi trẻ lớn dần; nội dung chuyên môn sẽ thay đổi theo giai đoạn tuổi." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />
+          <PremiumQuickActions onNavigate={(target) => setActive(target)} />
           <StagePanel stage={profileAge.stage} />
           <div className="hf-today-grid">
             <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>
