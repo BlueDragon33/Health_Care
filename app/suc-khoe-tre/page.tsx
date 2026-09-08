@@ -9,6 +9,7 @@ import "./attention-queue.css";
 import "./profile-switcher.css";
 import "./privacy-center.css";
 import "./secure-vault-center.css";
+import "./private-sensitive-notes.css";
 import "./control-plane.css";
 
 export const dynamic = "force-dynamic";
