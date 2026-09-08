@@ -59,6 +59,9 @@ for (const token of [
 
 if (/\bloadHealthState\(/.test(framework)) throw new Error("Framework không được đọc global single-profile state sau migration");
 if (/\bsaveHealthState\(/.test(framework)) throw new Error("Framework không được ghi global single-profile state sau migration");
+if (framework.includes("saveHealthProfileRegistry(synced);\n      setProfileRegistry(synced);")) throw new Error("Không được set Profile Registry đồng bộ bên trong persistence effect");
+need(framework, "function updateProfile(patch: Partial<HealthProfile>)", "event-driven profile identity sync");
+need(framework, "setProfileRegistry(syncRegistryIdentity(profileRegistry, activeProfileId, nextProfile))", "registry sync from edit event");
 
 need(page, 'import "./profile-switcher.css"', "profile switcher stylesheet");
 for (const token of ["box-shadow: inset", ":focus-visible", "@media (max-width: 620px)", "@media (prefers-reduced-motion: reduce)"]) need(styles, token, "3D/accessibility style");

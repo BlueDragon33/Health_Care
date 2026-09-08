@@ -15,6 +15,7 @@ import {
   type DailyRecord,
   type GrowthEntry,
   type HealthLocalState,
+  type HealthProfile,
   type MealEntry,
   type Reminder,
   type TaskKey,
@@ -165,15 +166,14 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   }, []);
 
   useEffect(() => {
-    if (!hydrated || !profileRegistry?.activeProfileId) return;
-    const activeId = profileRegistry.activeProfileId;
-    saveHealthProfileState(activeId, state);
-    const synced = syncRegistryIdentity(profileRegistry, activeId, state.profile);
-    if (synced !== profileRegistry) {
-      saveHealthProfileRegistry(synced);
-      setProfileRegistry(synced);
-    }
-  }, [hydrated, profileRegistry, state]);
+    if (!hydrated || !activeProfileId) return;
+    saveHealthProfileState(activeProfileId, state);
+  }, [hydrated, activeProfileId, state]);
+
+  useEffect(() => {
+    if (!hydrated || !profileRegistry) return;
+    saveHealthProfileRegistry(profileRegistry);
+  }, [hydrated, profileRegistry]);
 
   useEffect(() => {
     if (!hydrated || notificationPermission !== "granted" || typeof Notification === "undefined") return;
@@ -212,6 +212,14 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
   const activeProfileId = profileRegistry?.activeProfileId ?? "";
   const activeProfileIdentity = profileRegistry?.profiles.find((item) => item.id === activeProfileId) ?? null;
+
+  function updateProfile(patch: Partial<HealthProfile>) {
+    const nextProfile = { ...state.profile, ...patch };
+    setState((current) => ({ ...current, profile: { ...current.profile, ...patch } }));
+    if (profileRegistry && activeProfileId) {
+      setProfileRegistry(syncRegistryIdentity(profileRegistry, activeProfileId, nextProfile));
+    }
+  }
 
   function switchProfile(profileId: string) {
     if (!profileRegistry || !profileId || profileId === activeProfileId) return;
@@ -332,6 +340,9 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     try {
       const imported = parseHealthBackup(JSON.parse(await file.text()));
       setState(imported);
+      if (profileRegistry && activeProfileId) {
+        setProfileRegistry(syncRegistryIdentity(profileRegistry, activeProfileId, imported.profile));
+      }
       setDayKey(today);
       setBackupNotice("Đã khôi phục bản sao vào riêng hồ sơ đang chọn. Hồ sơ khác không bị thay đổi; bản sao 9–10 cũ vẫn được hỗ trợ.");
     } catch (error) {
@@ -423,7 +434,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         {active === "profile" ? <section className="hf-section">
           <SectionHeader title="Hồ sơ & nhắc việc" description="Một hồ sơ đi cùng từ 9 đến hết 18 tuổi. Google Calendar là quyền riêng do Trung tâm cấp cho từng thiết bị." aside={device.calendarEnabled ? "Calendar: được cấp" : "Calendar: đang khóa"} />
           <div className="hf-work-grid">
-            <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hồ sơ</span><h3>Thông tin cơ bản</h3></div><span className={profileAge.inScope === false ? "hf-scope-badge is-warning" : "hf-scope-badge"}>{profileAge.text}</span></div><div className="hf-form-grid"><label>Tên / tên gọi<input value={state.profile.name} maxLength={80} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, name: event.target.value } }))} /></label><label>Ngày sinh<input type="date" max={today} value={state.profile.birthDate} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, birthDate: event.target.value } }))} /></label><label>Giới tính dùng cho biểu đồ tăng trưởng<select value={state.profile.sex} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, sex: event.target.value as "male" | "female" | "" } }))}><option value="">Chưa chọn</option><option value="male">Nam</option><option value="female">Nữ</option></select></label></div>{profileAge.inScope === false ? <div className="hf-age-warning">Hồ sơ hiện nằm ngoài phạm vi 9–18 tuổi. Ứng dụng vẫn bảo toàn dữ liệu, nhưng không tự áp khuyến nghị hoặc đánh giá tăng trưởng ngoài phạm vi đã kiểm định.</div> : null}{profileAge.stage ? <div className="hf-local-badge">{profileAge.stage.label}</div> : null}<label className="hf-textarea-label">Ghi chú cần nhớ<textarea value={state.profile.note} maxLength={800} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, note: event.target.value } }))} /></label><div className="hf-local-badge">Chỉ lưu trong trình duyệt hiện tại · không gửi hồ sơ này sang Site Quản trị.</div></section>
+            <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hồ sơ</span><h3>Thông tin cơ bản</h3></div><span className={profileAge.inScope === false ? "hf-scope-badge is-warning" : "hf-scope-badge"}>{profileAge.text}</span></div><div className="hf-form-grid"><label>Tên / tên gọi<input value={state.profile.name} maxLength={80} onChange={(event) => updateProfile({ name: event.target.value })} /></label><label>Ngày sinh<input type="date" max={today} value={state.profile.birthDate} onChange={(event) => updateProfile({ birthDate: event.target.value })} /></label><label>Giới tính dùng cho biểu đồ tăng trưởng<select value={state.profile.sex} onChange={(event) => updateProfile({ sex: event.target.value as "male" | "female" | "" })}><option value="">Chưa chọn</option><option value="male">Nam</option><option value="female">Nữ</option></select></label></div>{profileAge.inScope === false ? <div className="hf-age-warning">Hồ sơ hiện nằm ngoài phạm vi 9–18 tuổi. Ứng dụng vẫn bảo toàn dữ liệu, nhưng không tự áp khuyến nghị hoặc đánh giá tăng trưởng ngoài phạm vi đã kiểm định.</div> : null}{profileAge.stage ? <div className="hf-local-badge">{profileAge.stage.label}</div> : null}<label className="hf-textarea-label">Ghi chú cần nhớ<textarea value={state.profile.note} maxLength={800} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, note: event.target.value } }))} /></label><div className="hf-local-badge">Chỉ lưu trong trình duyệt hiện tại · không gửi hồ sơ này sang Site Quản trị.</div></section>
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Lộ trình 9–18</span><h3>4 giai đoạn liên tục</h3></div></div><div className="hf-entry-list">{HEALTH_AGE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.stage?.id ? "Hiện tại" : "Giai đoạn"}</span><strong>{stage.label}</strong><small>{stage.focus.join(" · ")}</small></article>)}</div></section>
           </div>
           <div className="hf-work-grid">
