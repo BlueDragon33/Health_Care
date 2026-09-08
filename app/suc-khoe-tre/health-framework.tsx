@@ -28,6 +28,7 @@ import GrowthTrend from "./growth-trend";
 import WeeklyHealthSummary from "./weekly-health-summary";
 import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
+import AttentionQueue from "./attention-queue";
 
 export type HealthDeviceAccess = {
   deviceCode: string;
@@ -285,6 +286,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>
             <article className="hf-next-card"><span>Việc tiếp theo</span><strong>{nextReminder?.reminder.title ?? "Chưa có nhắc việc"}</strong><p>{nextReminder ? `${formatDateTime(nextReminder.date)} · ${repeatLabels[nextReminder.reminder.repeat]}` : "Tạo nhắc việc trong Hồ sơ → Lịch & nhắc việc."}</p></article>
           </div>
+          <AttentionQueue state={state} onNavigate={(target) => setActive(target)} />
           <div className="hf-dashboard-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayTasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div></section>
             <aside className="hf-quick-column">
