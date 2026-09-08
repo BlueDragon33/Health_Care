@@ -313,14 +313,15 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     const blob = new Blob([content], { type: "application/json;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement("a");
-    const profileSlug = (activeProfileIdentity?.displayName || "ho-so").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "ho-so";
+    const backupProfileName = activeProfileIdentity?.displayName || state.profile.name || "đang chọn";
+    const profileSlug = (backupProfileName || "ho-so").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "ho-so";
     anchor.href = url;
     anchor.download = `suc-khoe-y-te-${profileSlug}-backup-${today}.json`;
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
-    setBackupNotice(`Đã tạo bản sao riêng cho hồ sơ “${activeProfileIdentity?.displayName ?? state.profile.name || "đang chọn"}”.`);
+    setBackupNotice(`Đã tạo bản sao riêng cho hồ sơ “${backupProfileName}”.`);
   }
 
   async function importBackup(event: ChangeEvent<HTMLInputElement>) {
