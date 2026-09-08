@@ -35,8 +35,7 @@ const required = {
   ],
   "app/control-auth.server.ts": [
     "HEALTH_CONTROL_SERVICE_SECRET",
-    "CONTROL_SERVICE_SECRET",
-    "legacy-global",
+    "HEALTH_CONTROL_SECRET_UNCONFIGURED",
     "getControlSecretScope",
   ],
   "app/api/control/status/route.ts": [
@@ -91,4 +90,9 @@ for (const [file, tokens] of Object.entries(required)) {
   }
 }
 
-console.log("Device management V3 PASS: classification, review, canonical identity, capabilities, app-scoped control secret and deployed revision contract are aligned.");
+const controlAuth = fs.readFileSync("app/control-auth.server.ts", "utf8");
+if (/values\.CONTROL_SERVICE_SECRET/.test(controlAuth) || controlAuth.includes("legacy-global")) {
+  throw new Error("Health_Care không được fallback sang CONTROL_SERVICE_SECRET dùng chung.");
+}
+
+console.log("Device management V3 PASS: classification, review, canonical identity, capabilities, dedicated Health control secret and deployed revision contract are aligned.");
