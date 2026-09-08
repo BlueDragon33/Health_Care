@@ -24,6 +24,14 @@ const required = {
     "deviceTypeOverride",
     "environmentChanged",
     "site_device_environment_changed",
+    "canonicalApplication",
+    "suc-khoe-y-te",
+    "applicationAliases",
+    "controlProtocol",
+    "health-control-plane",
+    "capabilities",
+    "device-review-v1",
+    "healthDataInControlPlane",
   ],
   "app/api/control/devices/route.ts": [
     "classificationConfidence",
@@ -63,4 +71,4 @@ for (const [file, tokens] of Object.entries(required)) {
   }
 }
 
-console.log("Device management V3 PASS: auto classification, review flags, manual override and Control API are aligned.");
+console.log("Device management V3 PASS: classification, review, canonical app identity and capability negotiation are aligned.");
