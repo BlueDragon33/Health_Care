@@ -14,6 +14,7 @@
     "validate:growth": "node scripts/validate-who-growth.mjs",
     "validate:framework": "node scripts/validate-health-framework.mjs && node scripts/validate-weekly-summary.mjs && node scripts/validate-health-timeline.mjs && node scripts/validate-reminder-engine.mjs && node scripts/validate-attention-queue.mjs && node scripts/validate-profile-registry.mjs && node scripts/validate-profile-privacy.mjs && node scripts/validate-secure-vault.mjs && node scripts/validate-private-sensitive-notes.mjs && node scripts/validate-secure-vault-backup.mjs && node scripts/validate-medications-allergies.mjs && node scripts/validate-vital-signs-screening.mjs && node scripts/validate-chronic-conditions-care-plans.mjs && node scripts/validate-preventive-care-records.mjs && node scripts/validate-premium-health-ui.mjs && node scripts/validate-premium-health-ui-v2.mjs",
     "validate:device": "node scripts/validate-device-classification.mjs",
+    "validate:control": "node scripts/validate-control-plane-separation.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },

@@ -43,6 +43,9 @@ jobs:
       - name: Validate device auto-classification
         run: npm run validate:device
 
+      - name: Validate control-plane separation
+        run: npm run validate:control
+
       - name: Enforce repository separation
         shell: bash
         run: |
