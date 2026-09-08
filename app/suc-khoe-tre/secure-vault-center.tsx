@@ -3,16 +3,19 @@
 import { useEffect, useRef, useState } from "react";
 import {
   VAULT_AUTO_LOCK_MS,
+  VAULT_MIN_PIN_LENGTH,
   countVaultRecords,
   setupVault,
   unlockVault,
   vaultConfigured,
+  vaultRuntimeSupported,
   type VaultStatus,
 } from "./health-secure-vault";
 
 function statusLabel(status: VaultStatus) {
   if (status === "unlocked") return "Đang mở trong bộ nhớ phiên";
   if (status === "locked") return "Đã khóa";
+  if (status === "unsupported") return "Không được hỗ trợ";
   return "Chưa cấu hình";
 }
 
@@ -27,7 +30,7 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setStatus(vaultConfigured(profileId) ? "locked" : "not-configured");
+      setStatus(vaultRuntimeSupported() ? (vaultConfigured(profileId) ? "locked" : "not-configured") : "unsupported");
       setVaultKey(null);
       setRecordCount(null);
       setPin("");
@@ -45,6 +48,8 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
         setVaultKey(null);
         setStatus("locked");
         setRecordCount(null);
+        setPin("");
+        setConfirmPin("");
         setNotice("Secure Vault đã tự khóa sau thời gian không hoạt động.");
       }, VAULT_AUTO_LOCK_MS);
     };
@@ -64,7 +69,7 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
 
   async function configure() {
     setNotice("");
-    if (pin.length < 6) { setNotice("Mã khóa cần ít nhất 6 ký tự."); return; }
+    if (pin.length < VAULT_MIN_PIN_LENGTH) { setNotice(`Mã khóa cần ít nhất ${VAULT_MIN_PIN_LENGTH} ký tự.`); return; }
     if (pin !== confirmPin) { setNotice("Hai lần nhập mã khóa chưa khớp."); return; }
     try {
       const key = await setupVault(profileId, pin);
@@ -86,11 +91,12 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
       setVaultKey(key);
       setStatus("unlocked");
       setPin("");
-      setRecordCount(await countVaultRecords(profileId));
+      setRecordCount(await countVaultRecords(key, profileId));
       setNotice("Đã mở Secure Vault cho hồ sơ đang chọn.");
     } catch (error) {
       setVaultKey(null);
       setStatus("locked");
+      setRecordCount(null);
       setNotice(error instanceof Error ? error.message : "Không thể mở Secure Vault.");
     }
   }
@@ -111,7 +117,7 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
         <h3>Kho mã hóa cho dữ liệu rất nhạy cảm</h3>
         <p>Vault dành cho các module sâu như tâm lý, dậy thì, chu kỳ, thuốc và tài liệu y tế khi chúng được triển khai.</p>
       </div>
-      <div className={`vault-status status-${status}`}><span /> <strong>{statusLabel(status)}</strong></div>
+      <div className={`vault-status status-${status}`} aria-live="polite"><span /> <strong>{statusLabel(status)}</strong></div>
     </header>
 
     <div className="vault-boundary">
@@ -119,27 +125,31 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
       <span>Dữ liệu thói quen/tăng trưởng hiện tại vẫn theo storage baseline. Chỉ payload được ghi qua Vault API mới được AES-GCM mã hóa trong IndexedDB.</span>
     </div>
 
+    {status === "unsupported" ? <div className="vault-notice is-warning" role="status">Trình duyệt này thiếu Web Crypto hoặc IndexedDB cần thiết. Không tạo dữ liệu nhạy cảm mới trên thiết bị này.</div> : null}
+
     {status === "not-configured" ? <div className="vault-form">
-      <label><span>Tạo mã khóa local</span><input type="password" autoComplete="new-password" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="Ít nhất 6 ký tự" /></label>
-      <label><span>Nhập lại mã khóa</span><input type="password" autoComplete="new-password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} placeholder="Nhập lại" /></label>
-      <button type="button" className="hf-primary" onClick={() => void configure()}>Tạo Secure Vault</button>
+      <label><span>Tạo mã khóa local</span><input type="password" autoComplete="new-password" value={pin} onChange={(event) => setPin(event.target.value)} placeholder={`Ít nhất ${VAULT_MIN_PIN_LENGTH} ký tự`} minLength={VAULT_MIN_PIN_LENGTH} maxLength={128} /></label>
+      <label><span>Nhập lại mã khóa</span><input type="password" autoComplete="new-password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} placeholder="Nhập lại" minLength={VAULT_MIN_PIN_LENGTH} maxLength={128} onKeyDown={(event) => { if (event.key === "Enter") void configure(); }} /></label>
+      <button type="button" className="hf-primary vault-action" onClick={() => void configure()}>Tạo Secure Vault</button>
+      <small>Nên dùng cụm mã khó đoán, không dùng ngày sinh hoặc mã thiết bị. V1 chưa có cơ chế khôi phục nếu quên mã.</small>
     </div> : null}
 
     {status === "locked" ? <div className="vault-form compact">
-      <label><span>Mã khóa</span><input type="password" autoComplete="current-password" value={pin} onChange={(event) => setPin(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void unlock(); }} /></label>
-      <button type="button" className="hf-primary" onClick={() => void unlock()}>Mở Vault</button>
+      <label><span>Mã khóa</span><input type="password" autoComplete="current-password" value={pin} onChange={(event) => setPin(event.target.value)} minLength={VAULT_MIN_PIN_LENGTH} maxLength={128} onKeyDown={(event) => { if (event.key === "Enter") void unlock(); }} /></label>
+      <button type="button" className="hf-primary vault-action" onClick={() => void unlock()}>Mở Vault</button>
     </div> : null}
 
     {status === "unlocked" ? <div className="vault-open-panel">
       <div><span>Bản ghi mã hóa</span><strong>{recordCount ?? "—"}</strong></div>
       <div><span>Tự khóa</span><strong>10 phút không hoạt động</strong></div>
-      <button type="button" className="hf-secondary" onClick={lockNow}>Khóa ngay</button>
+      <button type="button" className="hf-secondary vault-action" onClick={lockNow}>Khóa ngay</button>
     </div> : null}
 
     {notice ? <div className="vault-notice" role="status">{notice}</div> : null}
 
     <div className="vault-safety-grid">
       <article><strong>PIN không được lưu</strong><span>PIN chỉ dùng để dẫn xuất khóa; khóa giải mã chỉ giữ trong bộ nhớ khi Vault đang mở.</span></article>
+      <article><strong>Cô lập theo hồ sơ</strong><span>AES-GCM dùng dữ liệu xác thực gắn với profileId; ciphertext của hồ sơ này không được giải mã dưới định danh hồ sơ khác.</span></article>
       <article><strong>Không gửi sang Admin</strong><span>Vault key, PIN và ciphertext không được đưa vào Control Plane.</span></article>
       <article><strong>Không hứa khôi phục</strong><span>V1 chưa có recovery key. Quên mã khóa có thể khiến dữ liệu Vault không thể giải mã; chưa nên dùng cho hồ sơ duy nhất không có bản sao phù hợp.</span></article>
     </div>
