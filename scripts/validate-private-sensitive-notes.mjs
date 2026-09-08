@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 const notes = fs.readFileSync("app/suc-khoe-tre/private-sensitive-notes.tsx", "utf8");
 const styles = fs.readFileSync("app/suc-khoe-tre/private-sensitive-notes.css", "utf8");
+const access = fs.readFileSync("app/suc-khoe-tre/use-sensitive-vault-domain.ts", "utf8");
 const privacy = fs.readFileSync("app/suc-khoe-tre/health-profile-privacy.ts", "utf8");
 const domains = fs.readFileSync("app/suc-khoe-tre/health-domain-catalog.ts", "utf8");
 const session = fs.readFileSync("app/suc-khoe-tre/secure-vault-session.tsx", "utf8");
@@ -16,10 +17,7 @@ function need(source, token, label) {
 for (const token of [
   'PRIVATE_SENSITIVE_NOTES_DOMAIN_ID = "records-appointments-documents"',
   'PRIVATE_NOTE_KIND = "private-note-v1"',
-  'useSecureVaultSession()',
-  'loadProfilePrivacyPolicy(profileId)',
-  'loadViewerRole()',
-  'canViewerAccessDomain(policy, PRIVATE_SENSITIVE_NOTES_DOMAIN_ID, role)',
+  'useSensitiveVaultDomain(PRIVATE_SENSITIVE_NOTES_DOMAIN_ID)',
   'visibility === "unconfigured"',
   'status !== "unlocked"',
   'status === "unlocked" && key',
@@ -35,6 +33,18 @@ for (const token of [
   'noDiagnosisOrClinicalScoring: true',
 ]) need(notes, token, "privacy/vault binding");
 
+for (const token of [
+  'useSecureVaultSession()',
+  'loadProfilePrivacyPolicy(profileId)',
+  'loadViewerRole()',
+  'canViewerAccessDomain(policy, domainId, role)',
+  'PROFILE_PRIVACY_CHANGED_EVENT',
+  'vault.status === "unlocked"',
+  'requiresExplicitProfilePrivacyPolicy: true',
+  'requiresActiveProfileUnlockedVault: true',
+  'noAdminOrNetworkDependency: true',
+]) need(access, token, "shared sensitive-domain access contract");
+
 for (const forbidden of [
   "HealthLocalState",
   "currentDay(",
@@ -49,7 +59,8 @@ for (const forbidden of [
 if (/(?:window\.)?localStorage\s*\./.test(notes) || /(?:window\.)?sessionStorage\s*\./.test(notes)) {
   throw new Error("Private Notes không được dùng Web Storage API cho plaintext");
 }
-if (/\bfetch\s*\(/.test(notes)) throw new Error("Private Notes không được gọi network/API trực tiếp");
+if (/\bfetch\s*\(/.test(notes) || /\bfetch\s*\(/.test(access)) throw new Error("Private Notes/access hook không được gọi network/API trực tiếp");
+if (/\/api\/control|CONTROL_SERVICE_SECRET|control-plane/i.test(access)) throw new Error("Sensitive-domain access hook không được phụ thuộc Control Plane");
 if (/console\.(?:log|debug|info|warn|error)/.test(notes)) throw new Error("Private Notes không được log nội dung nhạy cảm");
 
 need(domains, 'id: "records-appointments-documents"', "existing domain");
@@ -88,4 +99,4 @@ for (const token of [
   "@media (prefers-reduced-motion: reduce)",
 ]) need(styles, token, "3D/accessibility style");
 
-console.log("Private Sensitive Notes V1 PASS: configured Profile Privacy + viewer permission + active-profile unlocked Vault are all required; plaintext baseline/network/Admin fallbacks are absent.");
+console.log("Private Sensitive Notes V1 PASS: shared sensitive-domain access hook enforces Profile Privacy + viewer permission + active-profile unlocked Vault; plaintext baseline/network/Admin fallbacks remain absent.");
