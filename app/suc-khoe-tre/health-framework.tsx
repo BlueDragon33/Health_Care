@@ -27,6 +27,7 @@ import GrowthTrend from "./growth-trend";
 import WeeklyHealthSummary from "./weekly-health-summary";
 import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
+import NutritionStagePanel from "./nutrition-stage-panel";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
@@ -406,8 +407,9 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         </section> : null}
 
         {active === "nutrition" ? <section className="hf-section">
-          <SectionHeader title="Dinh dưỡng" description="Checklist nhóm thực phẩm, nước và nhật ký bữa ăn theo ngày. Mục tiêu sau này được cấu hình theo từng giai đoạn 9–18, không dùng chế độ giảm cân người lớn cho trẻ." aside={formatDate(dayKey)} />
+          <SectionHeader title="Dinh dưỡng" description="Checklist nhóm thực phẩm, nước và nhật ký bữa ăn theo ngày; nội dung được cá nhân hóa theo 4 giai đoạn 9–18 tuổi và không dùng chế độ giảm cân người lớn cho trẻ." aside={formatDate(dayKey)} />
           <StagePanel stage={profileAge.stage} />
+          <NutritionStagePanel stage={profileAge.stage} day={day} />
           <div className="hf-work-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nhóm thực phẩm</span><h3>Checklist ngày đã chọn</h3></div><small>{day.foodGroups.length}/{foodGroups.length}</small></div><div className="hf-chip-grid">{foodGroups.map((group) => <button type="button" key={group} className={day.foodGroups.includes(group) ? "hf-chip is-active" : "hf-chip"} onClick={() => toggleFoodGroup(group)}>{group}</button>)}</div></section>
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nước</span><h3>{day.waterCups} cốc</h3></div></div><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.max(0, current.waterCups - 1) }))}>−</button><strong>{day.waterCups}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.min(50, current.waterCups + 1), tasks: { ...current.tasks, water: true } }))}>+</button></div><p className="hf-muted">Đơn vị “cốc” chỉ để ghi nhanh; chưa tự áp một mục tiêu nước giống nhau cho mọi tuổi/cân nặng.</p></section>
