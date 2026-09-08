@@ -25,6 +25,7 @@ import { downloadReminderIcs, googleCalendarUrl, nextReminderOccurrence, occurre
 import { HEALTH_AGE_STAGES, profileAgeScope, type HealthAgeStage } from "./health-age-scope";
 import { assessWhoBmiForAge, calculateBmi, formatAgeMonths, type WhoBmiAssessment } from "./who-bmi-reference";
 import GrowthTrend from "./growth-trend";
+import WeeklyHealthSummary from "./weekly-health-summary";
 
 export type HealthDeviceAccess = {
   deviceCode: string;
@@ -333,6 +334,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nước</span><h3>{day.waterCups} cốc</h3></div></div><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.max(0, current.waterCups - 1) }))}>−</button><strong>{day.waterCups}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.min(50, current.waterCups + 1), tasks: { ...current.tasks, water: true } }))}>+</button></div><p className="hf-muted">Đơn vị “cốc” chỉ để ghi nhanh; chưa tự áp một mục tiêu nước giống nhau cho mọi tuổi/cân nặng.</p></section>
           </div>
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nhật ký bữa ăn</span><h3>Ghi món đã ăn</h3></div></div><div className="hf-inline-form"><select value={mealType} onChange={(event) => setMealType(event.target.value as MealEntry["meal"])}><option value="breakfast">Bữa sáng</option><option value="lunch">Bữa trưa</option><option value="snack">Bữa phụ</option><option value="dinner">Bữa tối</option></select><input value={mealText} onChange={(event) => setMealText(event.target.value)} placeholder="Ví dụ: cơm, cá, rau, cam" maxLength={180} /><button className="hf-primary" type="button" onClick={addMeal}>Thêm</button></div>{day.meals.length ? <div className="hf-entry-list">{[...day.meals].reverse().map((entry) => <article key={entry.id}><span>{entry.meal === "breakfast" ? "Sáng" : entry.meal === "lunch" ? "Trưa" : entry.meal === "snack" ? "Phụ" : "Tối"}</span><strong>{entry.text}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, meals: current.meals.filter((item) => item.id !== entry.id) }))}>Xóa</button></article>)}</div> : <Empty>Chưa ghi bữa ăn cho ngày này.</Empty>}</section>
+          <WeeklyHealthSummary state={state} endDate={dayKey} mode="nutrition" />
         </section> : null}
 
         {active === "activity" ? <section className="hf-section">
@@ -340,6 +342,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
           <StagePanel stage={profileAge.stage} />
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hoạt động trong ngày</span><h3>Thêm vận động</h3></div><strong className="hf-big-number">{day.activities.reduce((sum, item) => sum + item.minutes, 0)} phút</strong></div><div className="hf-inline-form"><select value={activityType} onChange={(event) => setActivityType(event.target.value)}>{activityTypes.map((item) => <option key={item}>{item}</option>)}</select><input inputMode="numeric" value={activityMinutes} onChange={(event) => setActivityMinutes(event.target.value)} placeholder="Số phút" /><button type="button" className="hf-primary" onClick={addActivity}>Thêm</button></div>{day.activities.length ? <div className="hf-entry-list">{[...day.activities].reverse().map((entry) => <article key={entry.id}><span>{entry.minutes} phút</span><strong>{entry.type}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, activities: current.activities.filter((item) => item.id !== entry.id) }))}>Xóa</button></article>)}</div> : <Empty>Chưa có hoạt động cho ngày này.</Empty>}</section>
           <section className="hf-panel hf-info-panel"><span className="hf-kicker">Đúng phạm vi 9–18</span><h3>Theo dõi sức khỏe, không phải app gym</h3><p>Ứng dụng ưu tiên tăng trưởng, thể lực và thói quen. Không tự đặt mục tiêu giảm cân, siết cân hoặc hình thể người lớn cho trẻ/vị thành niên.</p></section>
+          <WeeklyHealthSummary state={state} endDate={dayKey} mode="activity" />
         </section> : null}
 
         {active === "care" ? <section className="hf-section">
@@ -351,6 +354,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <article className="hf-module-card"><span className="hf-kicker">Mắt & học tập</span><h3>Lần nghỉ mắt đã ghi</h3><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.max(0, current.eyeBreaks - 1) }))}>−</button><strong>{day.eyeBreaks}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.min(100, current.eyeBreaks + 1) }))}>+</button></div><small>Chỉ ghi thói quen; không tự chẩn đoán mỏi mắt hoặc tật khúc xạ.</small></article>
             <article className="hf-module-card"><span className="hf-kicker">Vệ sinh & tự chăm sóc</span><h3>Checklist trong ngày</h3><label className="hf-switch-row"><input type="checkbox" checked={day.hygieneDone} onChange={() => updateDay((current) => ({ ...current, hygieneDone: !current.hygieneDone }))} /><span>Đã hoàn thành vệ sinh / tự chăm sóc</span></label><small>Ở nhóm 16–18 tuổi, module này sẽ phát triển dần sang tự quản lý lịch khám, hồ sơ và thuốc theo chỉ định.</small></article>
           </div>
+          <WeeklyHealthSummary state={state} endDate={dayKey} mode="care" />
         </section> : null}
 
         {active === "journal" ? <section className="hf-section">
