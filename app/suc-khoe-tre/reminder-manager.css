@@ -1,0 +1,313 @@
+.reminder-manager {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid rgba(33, 78, 64, 0.14);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 16px 40px rgba(32, 60, 49, 0.08);
+}
+
+.reminder-manager-head,
+.reminder-toolbar,
+.reminder-card-actions,
+.reminder-weekdays,
+.reminder-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.reminder-manager-head {
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.reminder-manager-head h3 {
+  margin: 4px 0 6px;
+  font-size: 1.25rem;
+}
+
+.reminder-manager-head p,
+.reminder-boundary {
+  margin: 0;
+  color: rgba(34, 58, 49, 0.72);
+  line-height: 1.55;
+}
+
+.reminder-export-all,
+.reminder-weekdays button,
+.reminder-filter button,
+.reminder-card-actions button {
+  border: 1px solid rgba(38, 78, 64, 0.18);
+  border-radius: 13px;
+  background: #f8fbf7;
+  color: #244a3d;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(34, 78, 61, 0.15), 0 9px 18px rgba(45, 79, 68, 0.08);
+  transform: translateY(0);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.reminder-export-all,
+.reminder-card-actions button {
+  padding: 10px 13px;
+}
+
+.reminder-weekdays button,
+.reminder-filter button {
+  min-width: 46px;
+  padding: 9px 11px;
+}
+
+.reminder-export-all:hover:not(:disabled),
+.reminder-weekdays button:hover,
+.reminder-filter button:hover,
+.reminder-card-actions button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 rgba(34, 78, 61, 0.13), 0 12px 22px rgba(45, 79, 68, 0.1);
+}
+
+.reminder-export-all:active:not(:disabled),
+.reminder-weekdays button:active,
+.reminder-filter button:active,
+.reminder-card-actions button:active:not(:disabled),
+.reminder-weekdays button.is-selected,
+.reminder-filter button.is-selected {
+  transform: translateY(2px);
+  box-shadow: inset 0 2px 7px rgba(28, 68, 54, 0.18), 0 1px 0 rgba(34, 78, 61, 0.12);
+}
+
+.reminder-weekdays button.is-selected,
+.reminder-filter button.is-selected {
+  background: #dfeee5;
+  border-color: rgba(34, 94, 69, 0.34);
+}
+
+.reminder-export-all:focus-visible,
+.reminder-weekdays button:focus-visible,
+.reminder-filter button:focus-visible,
+.reminder-card-actions button:focus-visible,
+.reminder-toolbar input:focus-visible,
+.reminder-create-grid input:focus-visible,
+.reminder-create-grid select:focus-visible {
+  outline: 3px solid rgba(59, 122, 93, 0.28);
+  outline-offset: 3px;
+}
+
+.reminder-export-all:disabled,
+.reminder-card-actions button:disabled {
+  opacity: 0.46;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.reminder-overview {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reminder-overview article {
+  padding: 14px 16px;
+  border-radius: 17px;
+  background: #f5f9f5;
+  border: 1px solid rgba(41, 83, 68, 0.1);
+}
+
+.reminder-overview span,
+.reminder-card-main span {
+  display: block;
+  color: rgba(40, 67, 58, 0.7);
+  font-size: 0.82rem;
+}
+
+.reminder-overview strong {
+  display: block;
+  margin-top: 3px;
+  font-size: 1.45rem;
+}
+
+.reminder-create-grid {
+  display: grid;
+  grid-template-columns: 2fr repeat(4, minmax(130px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.reminder-create-grid label {
+  display: grid;
+  gap: 6px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #35564a;
+}
+
+.reminder-create-grid input,
+.reminder-create-grid select,
+.reminder-toolbar input {
+  min-height: 44px;
+  border: 1px solid rgba(41, 83, 68, 0.17);
+  border-radius: 12px;
+  background: #fff;
+  color: #1f3f34;
+  font: inherit;
+  padding: 9px 11px;
+}
+
+.reminder-add {
+  min-height: 44px;
+}
+
+.reminder-weekdays {
+  flex-wrap: wrap;
+  padding: 10px 0 2px;
+}
+
+.reminder-toolbar {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.reminder-toolbar input {
+  width: min(360px, 100%);
+}
+
+.reminder-list-v2 {
+  display: grid;
+  gap: 11px;
+}
+
+.reminder-list-v2 > article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: center;
+  padding: 15px;
+  border-radius: 18px;
+  border: 1px solid rgba(40, 82, 67, 0.12);
+  background: #fbfdfa;
+}
+
+.reminder-list-v2 > article.is-disabled {
+  opacity: 0.58;
+}
+
+.reminder-card-main strong,
+.reminder-card-main small,
+.reminder-card-main em {
+  display: block;
+}
+
+.reminder-card-main strong {
+  margin: 3px 0;
+}
+
+.reminder-card-main small,
+.reminder-card-main em {
+  color: rgba(39, 65, 56, 0.7);
+  font-size: 0.82rem;
+}
+
+.reminder-card-main em {
+  margin-top: 5px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.reminder-card-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.reminder-calendar-lock {
+  display: grid;
+  gap: 3px;
+  padding: 13px 15px;
+  border-radius: 15px;
+  background: #fff7df;
+  border: 1px solid rgba(134, 104, 31, 0.18);
+}
+
+.reminder-calendar-lock span {
+  color: rgba(89, 70, 24, 0.78);
+  font-size: 0.86rem;
+}
+
+.reminder-boundary {
+  padding-top: 3px;
+  font-size: 0.86rem;
+}
+
+@media (max-width: 1100px) {
+  .reminder-create-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reminder-wide {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .reminder-manager-head,
+  .reminder-toolbar,
+  .reminder-list-v2 > article {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .reminder-manager-head,
+  .reminder-toolbar {
+    display: grid;
+  }
+
+  .reminder-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .reminder-card-actions {
+    justify-content: flex-start;
+  }
+
+  .reminder-toolbar input {
+    width: 100%;
+  }
+}
+
+@media (max-width: 520px) {
+  .reminder-manager {
+    padding: 15px;
+    border-radius: 19px;
+  }
+
+  .reminder-create-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reminder-wide {
+    grid-column: auto;
+  }
+
+  .reminder-filter,
+  .reminder-card-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .reminder-filter button,
+  .reminder-card-actions button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reminder-export-all,
+  .reminder-weekdays button,
+  .reminder-filter button,
+  .reminder-card-actions button {
+    transition: none;
+  }
+}

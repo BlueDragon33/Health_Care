@@ -21,12 +21,13 @@ import {
   type Reminder,
   type TaskKey,
 } from "./health-local-store";
-import { downloadReminderIcs, googleCalendarUrl, nextReminderOccurrence, occurrenceDueNow } from "./health-reminders";
+import { nextReminderOccurrence, occurrenceDueNow } from "./health-reminders";
 import { HEALTH_AGE_STAGES, profileAgeScope, type HealthAgeStage } from "./health-age-scope";
 import { assessWhoBmiForAge, calculateBmi, formatAgeMonths, type WhoBmiAssessment } from "./who-bmi-reference";
 import GrowthTrend from "./growth-trend";
 import WeeklyHealthSummary from "./weekly-health-summary";
 import HealthTimeline from "./health-timeline";
+import ReminderManager, { repeatLabels } from "./reminder-manager";
 
 export type HealthDeviceAccess = {
   deviceCode: string;
@@ -60,7 +61,6 @@ const todayTasks: { key: TaskKey; label: string; group: string }[] = [
 const foodGroups = ["Đạm", "Rau", "Trái cây", "Sữa / tương đương", "Ngũ cốc / tinh bột", "Nước"];
 const activityTypes = ["Đi bộ", "Chạy", "Đạp xe", "Bơi", "Bóng đá", "Nhảy dây", "Thể dục", "Khác"];
 const symptoms = ["Đau đầu", "Đau bụng", "Ho", "Sổ mũi", "Đau họng", "Sốt", "Mệt", "Khác"];
-const repeatLabels: Record<Reminder["repeat"], string> = { once: "Một lần", daily: "Hằng ngày", weekdays: "Thứ 2–6", weekly: "Hằng tuần" };
 const categoryLabels: Record<Reminder["category"], string> = { nutrition: "Dinh dưỡng", water: "Nước", activity: "Vận động", care: "Chăm sóc", growth: "Đo tăng trưởng", appointment: "Lịch khám", other: "Khác" };
 
 function formatDate(value: string) {
@@ -135,11 +135,6 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const [mealText, setMealText] = useState("");
   const [activityType, setActivityType] = useState(activityTypes[0]);
   const [activityMinutes, setActivityMinutes] = useState("30");
-  const [reminderTitle, setReminderTitle] = useState("");
-  const [reminderCategory, setReminderCategory] = useState<Reminder["category"]>("care");
-  const [reminderDate, setReminderDate] = useState("");
-  const [reminderTime, setReminderTime] = useState("19:30");
-  const [reminderRepeat, setReminderRepeat] = useState<Reminder["repeat"]>("daily");
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -147,7 +142,6 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
       setState(loadHealthState());
       setDayKey(today);
       setGrowthDate(today);
-      setReminderDate(today);
       setNotificationPermission(typeof Notification === "undefined" ? "unsupported" : Notification.permission);
       setHydrated(true);
     }, 0);
@@ -238,23 +232,9 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
     updateDay((current) => ({ ...current, activities: [...current.activities, entry].slice(-100), tasks: { ...current.tasks, movement: true } }));
   }
 
-  function addReminder() {
-    const title = reminderTitle.trim();
-    if (!title || !reminderDate || !/^\d{2}:\d{2}$/.test(reminderTime)) return;
-    const reminder: Reminder = { id: uid("reminder"), title: title.slice(0, 100), category: reminderCategory, date: reminderDate, time: reminderTime, repeat: reminderRepeat, enabled: true };
-    setState((current) => ({ ...current, reminders: [...current.reminders, reminder].slice(-200) }));
-    setReminderTitle("");
-  }
-
   async function requestNotifications() {
     if (typeof Notification === "undefined") { setNotificationPermission("unsupported"); return; }
     setNotificationPermission(await Notification.requestPermission());
-  }
-
-  function openGoogleCalendar(reminder: Reminder) {
-    if (!device.calendarEnabled) return;
-    const url = googleCalendarUrl(reminder);
-    if (url) window.open(url, "_blank", "noopener,noreferrer");
   }
 
   function downloadBackup() {
@@ -376,8 +356,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel hf-info-panel"><span className="hf-kicker">Chuyển tiếp 16–18</span><h3>Chuẩn bị tự quản lý sức khỏe khi vào đại học</h3><p>Giai đoạn cuối ưu tiên hiểu hồ sơ cá nhân, biết lịch khám/nhắc việc, duy trì thói quen và nhận biết khi nào cần tìm trợ giúp chuyên môn. Quyền truy cập và dữ liệu vẫn tuân theo kiến trúc thiết bị hiện tại.</p></section>
           </div>
           <section className="hf-panel hf-backup-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Sao lưu local-first</span><h3>Xuất / khôi phục dữ liệu thiết bị</h3><p className="hf-muted">Bản 9–18 đọc được cả tệp sao lưu 9–10 cũ. Việc di trú chỉ sao chép sang khóa lưu trữ mới, không xóa dữ liệu cũ.</p></div></div><div className="hf-backup-actions"><button type="button" className="hf-primary" onClick={downloadBackup}>Xuất bản sao JSON</button><label className="hf-file-button">Khôi phục từ bản sao<input type="file" accept="application/json,.json" onChange={(event) => void importBackup(event)} /></label></div>{backupNotice ? <div className="hf-backup-notice" role="status">{backupNotice}</div> : null}</section>
-          <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Reminder Engine</span><h3>Tạo nhắc việc</h3></div></div><div className="hf-reminder-form"><input value={reminderTitle} onChange={(event) => setReminderTitle(event.target.value)} placeholder="Ví dụ: Đánh răng buổi tối" maxLength={100} /><select value={reminderCategory} onChange={(event) => setReminderCategory(event.target.value as Reminder["category"])}>{Object.entries(categoryLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><input type="date" value={reminderDate} onChange={(event) => setReminderDate(event.target.value)} /><input type="time" value={reminderTime} onChange={(event) => setReminderTime(event.target.value)} /><select value={reminderRepeat} onChange={(event) => setReminderRepeat(event.target.value as Reminder["repeat"])}>{Object.entries(repeatLabels).map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><button className="hf-primary" type="button" onClick={addReminder}>Thêm nhắc việc</button></div></section>
-          <section className="hf-panel hf-list-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Lịch nhắc</span><h3>{state.reminders.length} nhắc việc</h3></div><small>Browser · .ics · Google Calendar</small></div>{state.reminders.length ? <div className="hf-reminder-list">{state.reminders.map((reminder) => <article key={reminder.id} className={reminder.enabled ? "" : "is-disabled"}><div><span>{categoryLabels[reminder.category]}</span><strong>{reminder.title}</strong><small>{formatDate(reminder.date)} · {reminder.time} · {repeatLabels[reminder.repeat]}</small></div><div className="hf-reminder-actions"><button type="button" onClick={() => setState((current) => ({ ...current, reminders: current.reminders.map((item) => item.id === reminder.id ? { ...item, enabled: !item.enabled } : item) }))}>{reminder.enabled ? "Tắt" : "Bật"}</button><button type="button" onClick={() => downloadReminderIcs(reminder)}>Tải .ics</button><button type="button" className={device.calendarEnabled ? "hf-calendar-enabled" : ""} disabled={!device.calendarEnabled} title={device.calendarEnabled ? "Mở Google Calendar" : "Thiết bị chưa được Trung tâm cấp quyền Google Calendar"} onClick={() => openGoogleCalendar(reminder)}>Google Calendar</button><button type="button" onClick={() => setState((current) => ({ ...current, reminders: current.reminders.filter((item) => item.id !== reminder.id) }))}>Xóa</button></div></article>)}</div> : <Empty>Chưa có nhắc việc.</Empty>} {!device.calendarEnabled ? <div className="hf-calendar-lock"><strong>Google Calendar đang bị khóa trên thiết bị này.</strong><span>Chỉ Trung tâm Quản trị có thể cấp quyền; Web App không tự mở khóa.</span></div> : null}</section>
+          <ReminderManager state={state} setState={setState} calendarEnabled={device.calendarEnabled} />
         </section> : null}
       </section>
     </div>

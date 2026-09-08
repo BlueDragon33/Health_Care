@@ -4,6 +4,7 @@ import "./health-polish.css";
 import "./growth-trend.css";
 import "./weekly-health-summary.css";
 import "./health-timeline.css";
+import "./reminder-manager.css";
 import "./control-plane.css";
 
 export const dynamic = "force-dynamic";
