@@ -13,6 +13,7 @@ export type HealthProfilePrivacyPolicy = {
 
 export const PROFILE_PRIVACY_PREFIX = "suc-khoe-y-te:profile-privacy:v1:";
 export const VIEWER_ROLE_SESSION_KEY = "suc-khoe-y-te:viewer-role:v1";
+export const PROFILE_PRIVACY_CHANGED_EVENT = "suc-khoe-y-te:profile-privacy-changed";
 
 export const HEALTH_VIEWER_ROLE_LABELS: Record<HealthViewerRole, string> = {
   self: "Chính người được theo dõi",
@@ -31,6 +32,11 @@ export const HEALTH_VISIBILITY_LABELS: Record<HealthVisibility, string> = {
 function defaultVisibility(privacy: HealthPrivacyLevel): HealthVisibility {
   if (privacy === "highly-sensitive") return "unconfigured";
   return "shared";
+}
+
+function announcePrivacyChange(kind: "policy" | "role", profileId?: string) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(PROFILE_PRIVACY_CHANGED_EVENT, { detail: { kind, profileId } }));
 }
 
 export function createDefaultPrivacyPolicy(profileId: string): HealthProfilePrivacyPolicy {
@@ -79,7 +85,10 @@ export function loadProfilePrivacyPolicy(profileId: string) {
 export function saveProfilePrivacyPolicy(policy: HealthProfilePrivacyPolicy) {
   if (typeof window === "undefined" || !policy.profileId) return;
   const normalized = normalizePrivacyPolicy({ ...policy, updatedAt: new Date().toISOString() }, policy.profileId);
-  try { window.localStorage.setItem(`${PROFILE_PRIVACY_PREFIX}${policy.profileId}`, JSON.stringify(normalized)); } catch { /* storage may be blocked */ }
+  try {
+    window.localStorage.setItem(`${PROFILE_PRIVACY_PREFIX}${policy.profileId}`, JSON.stringify(normalized));
+    announcePrivacyChange("policy", policy.profileId);
+  } catch { /* storage may be blocked */ }
 }
 
 export function loadViewerRole(): HealthViewerRole {
@@ -94,7 +103,10 @@ export function loadViewerRole(): HealthViewerRole {
 
 export function saveViewerRole(role: HealthViewerRole) {
   if (typeof window === "undefined") return;
-  try { window.sessionStorage.setItem(VIEWER_ROLE_SESSION_KEY, role); } catch { /* sessionStorage may be blocked */ }
+  try {
+    window.sessionStorage.setItem(VIEWER_ROLE_SESSION_KEY, role);
+    announcePrivacyChange("role");
+  } catch { /* sessionStorage may be blocked */ }
 }
 
 export function canViewerAccessVisibility(visibility: HealthVisibility, role: HealthViewerRole, context: HealthPrivacyContext = "normal") {
@@ -132,4 +144,5 @@ export const PROFILE_PRIVACY_V1_GUARDRAILS = {
   adminReceivesNoProfilePrivacyPolicy: true,
   viewerRoleV1IsNotCryptographicAuthentication: true,
   secureVaultRequiredBeforeStrongLocalRoleLock: true,
+  sameTabPrivacyChangesAreObservable: true,
 } as const;
