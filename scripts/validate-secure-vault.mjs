@@ -62,9 +62,14 @@ for (const token of [
 
 for (const token of [
   'import { SecureVaultSessionProvider } from "./secure-vault-session"',
-  '<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>',
+  'function HealthVaultBoundary({ profileId, children }',
+  '<SecureVaultSessionProvider key={`vault-session-${profileId}`} profileId={profileId}>',
+  '<HealthVaultBoundary profileId={activeProfileId}>',
   '<SecureVaultCenter />',
 ]) need(framework, token, "runtime integration");
+if (framework.includes('<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>')) {
+  throw new Error("Secure Vault validator phát hiện provider cũ chỉ nằm trong Profile section; phải dùng HealthVaultBoundary chung");
+}
 need(center, 'useSecureVaultSession()', "center consumes shared session");
 need(page, 'import "./secure-vault-center.css"', "stylesheet integration");
 need(packageJson, "validate-secure-vault.mjs", "CI gate");
@@ -136,4 +141,4 @@ try {
 }
 if (!crossProfileRejected) throw new Error("Ciphertext profile A không được giải mã dưới AAD profile B");
 
-console.log("Secure Health Vault V2 session PASS: crypto/storage boundaries plus one active-profile memory-only session, auto-lock and profile-switch key disposal are wired.");
+console.log("Secure Health Vault V2 session PASS: crypto/storage boundaries plus one shared active-profile memory-only session, auto-lock and profile-switch key disposal are wired.");
