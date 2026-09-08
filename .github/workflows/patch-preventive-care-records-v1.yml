@@ -1,0 +1,32 @@
+name: Patch Preventive Care Records V1
+
+on:
+  push:
+    branches:
+      - feature/preventive-care-immunization-records-v1
+    paths:
+      - .preventive-care-records-v1-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/preventive-care-immunization-records-v1
+      - name: Integrate Preventive Care Records V1
+        run: python .github/scripts/patch-preventive-care-records-v1.py
+      - name: Commit integration
+        run: |
+          if git diff --quiet; then
+            echo "No integration changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx app/suc-khoe-tre/page.tsx package.json
+          git commit -m "feat(health): integrate preventive care records v1"
+          git push origin HEAD:feature/preventive-care-immunization-records-v1
