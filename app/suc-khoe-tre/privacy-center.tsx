@@ -76,7 +76,7 @@ export default function PrivacyCenter({ profileId }: { profileId: string }) {
     </div>
 
     <div className="privacy-boundary-note">
-      <strong>Ranh giới V1:</strong> lựa chọn vai trò hiện là chế độ xem trong phiên, chưa phải xác thực bằng PIN/mật mã. Secure Health Vault sẽ là lớp khóa mạnh ở bước kế tiếp. Không có dữ liệu quyền riêng tư nào được gửi sang Site Quản trị.
+      <strong>Ranh giới V1:</strong> vai trò vẫn là chế độ xem trong phiên, chưa phải xác thực danh tính. Secure Health Vault hiện mã hóa payload nhạy cảm và yêu cầu mã khóa để mở dữ liệu, nhưng không tự chứng minh người mở khóa là phụ huynh hay chính người được theo dõi. Không có dữ liệu quyền riêng tư nào được gửi sang Site Quản trị.
     </div>
 
     <div className="privacy-sensitive-head">

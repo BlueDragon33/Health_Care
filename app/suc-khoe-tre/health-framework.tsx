@@ -31,6 +31,8 @@ import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PrivacyCenter from "./privacy-center";
 import SecureVaultCenter from "./secure-vault-center";
+import { SecureVaultSessionProvider } from "./secure-vault-session";
+import PrivateSensitiveNotes from "./private-sensitive-notes";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
 import {
   createHealthProfile,
@@ -439,8 +441,11 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hồ sơ</span><h3>Thông tin cơ bản</h3></div><span className={profileAge.inScope === false ? "hf-scope-badge is-warning" : "hf-scope-badge"}>{profileAge.text}</span></div><div className="hf-form-grid"><label>Tên / tên gọi<input value={state.profile.name} maxLength={80} onChange={(event) => updateProfile({ name: event.target.value })} /></label><label>Ngày sinh<input type="date" max={today} value={state.profile.birthDate} onChange={(event) => updateProfile({ birthDate: event.target.value })} /></label><label>Giới tính dùng cho biểu đồ tăng trưởng<select value={state.profile.sex} onChange={(event) => updateProfile({ sex: event.target.value as "male" | "female" | "" })}><option value="">Chưa chọn</option><option value="male">Nam</option><option value="female">Nữ</option></select></label></div>{profileAge.inScope === false ? <div className="hf-age-warning">Hồ sơ hiện nằm ngoài phạm vi 9–18 tuổi. Ứng dụng vẫn bảo toàn dữ liệu, nhưng không tự áp khuyến nghị hoặc đánh giá tăng trưởng ngoài phạm vi đã kiểm định.</div> : null}{profileAge.stage ? <div className="hf-local-badge">{profileAge.stage.label}</div> : null}<label className="hf-textarea-label">Ghi chú cần nhớ<textarea value={state.profile.note} maxLength={800} onChange={(event) => setState((current) => ({ ...current, profile: { ...current.profile, note: event.target.value } }))} /></label><div className="hf-local-badge">Chỉ lưu trong trình duyệt hiện tại · không gửi hồ sơ này sang Site Quản trị.</div></section>
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Lộ trình 9–18</span><h3>4 giai đoạn liên tục</h3></div></div><div className="hf-entry-list">{HEALTH_AGE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.stage?.id ? "Hiện tại" : "Giai đoạn"}</span><strong>{stage.label}</strong><small>{stage.focus.join(" · ")}</small></article>)}</div></section>
           </div>
-          {activeProfileId ? <PrivacyCenter key={activeProfileId} profileId={activeProfileId} /> : null}
-          {activeProfileId ? <SecureVaultCenter key={`vault-${activeProfileId}`} profileId={activeProfileId} /> : null}
+          {activeProfileId ? <SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>
+            <PrivacyCenter profileId={activeProfileId} />
+            <SecureVaultCenter />
+            <PrivateSensitiveNotes />
+          </SecureVaultSessionProvider> : null}
           <div className="hf-work-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Thông báo trình duyệt</span><h3>{notificationPermission === "granted" ? "Đã cho phép" : notificationPermission === "denied" ? "Đã bị trình duyệt chặn" : notificationPermission === "unsupported" ? "Không được hỗ trợ" : "Chưa cho phép"}</h3></div></div><p className="hf-muted">Thông báo lặp được kiểm tra khi Web App đang hoạt động. Để nhắc đáng tin cậy khi ứng dụng đóng, dùng file .ics hoặc Calendar.</p><button className="hf-secondary" type="button" disabled={notificationPermission === "unsupported"} onClick={() => void requestNotifications()}>Yêu cầu quyền thông báo</button></section>
             <section className="hf-panel hf-info-panel"><span className="hf-kicker">Chuyển tiếp 16–18</span><h3>Chuẩn bị tự quản lý sức khỏe khi vào đại học</h3><p>Giai đoạn cuối ưu tiên hiểu hồ sơ cá nhân, biết lịch khám/nhắc việc, duy trì thói quen và nhận biết khi nào cần tìm trợ giúp chuyên môn. Quyền truy cập và dữ liệu vẫn tuân theo kiến trúc thiết bị hiện tại.</p></section>
