@@ -28,6 +28,16 @@ ALTER TABLE `site_access_devices` ADD COLUMN `metadata_updated_at` text;
 --> statement-breakpoint
 UPDATE `site_access_devices` SET `metadata_updated_at` = CURRENT_TIMESTAMP WHERE `metadata_updated_at` IS NULL;
 --> statement-breakpoint
+CREATE TRIGGER `site_access_devices_metadata_insert_ts`
+AFTER INSERT ON `site_access_devices`
+FOR EACH ROW
+WHEN NEW.`metadata_updated_at` IS NULL
+BEGIN
+  UPDATE `site_access_devices`
+     SET `metadata_updated_at` = CURRENT_TIMESTAMP
+   WHERE `device_id` = NEW.`device_id`;
+END;
+--> statement-breakpoint
 CREATE INDEX `site_access_devices_installation_idx` ON `site_access_devices` (`installation_id`);
 --> statement-breakpoint
 CREATE INDEX `site_access_devices_classification_idx` ON `site_access_devices` (`device_type`,`classification_confidence`,`status`,`last_seen_at`);
