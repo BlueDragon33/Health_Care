@@ -31,6 +31,7 @@ import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PrivacyCenter from "./privacy-center";
 import SecureVaultCenter from "./secure-vault-center";
+import SecureVaultBackupCenter from "./secure-vault-backup-center";
 import { SecureVaultSessionProvider } from "./secure-vault-session";
 import PrivateSensitiveNotes from "./private-sensitive-notes";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
@@ -444,6 +445,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
           {activeProfileId ? <SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>
             <PrivacyCenter profileId={activeProfileId} />
             <SecureVaultCenter />
+            <SecureVaultBackupCenter />
             <PrivateSensitiveNotes />
           </SecureVaultSessionProvider> : null}
           <div className="hf-work-grid">
