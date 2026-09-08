@@ -10,7 +10,7 @@ for (const token of [
   "recentDateKeys(7, endDate)",
   "Ngày không ghi không được xem là",
   "không chuyển thành calo",
-  "chưa tự gắn nhãn",
+  "Chưa tự gắn nhãn",
   "Không tính calo",
   "không phải mức khuyến nghị",
 ]) {
