@@ -1,0 +1,62 @@
+name: Validate Health_Care
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: health-care-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Validate WHO growth reference
+        run: npm run validate:growth
+
+      - name: Validate 9–18 health framework
+        run: npm run validate:framework
+
+      - name: Enforce repository separation
+        shell: bash
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=node_modules --exclude-dir=.git --exclude='MIGRATION_SOURCE.md' \
+            '(from ["'"'].*(boi-ech|quan-ly-hoc-tap)|require\(["'"'].*(boi-ech|quan-ly-hoc-tap)|/boi-ech/|/quan-ly-hoc-tap/)' \
+            app worker scripts build 2>/dev/null; then
+            echo 'Health_Care must not import runtime/business code from BOIECH_AI applications.'
+            exit 1
+          fi
+          test -d app
+          test -d worker
+          test -d drizzle
+          test -f wrangler.d1.jsonc
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
