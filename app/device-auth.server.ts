@@ -7,6 +7,12 @@ export type SiteDeviceState = {
   deviceCode: string;
   status: SiteDeviceStatus;
   deviceType: SiteDeviceType;
+  detectedDeviceType: SiteDeviceType;
+  deviceTypeOverride: SiteDeviceType | null;
+  deviceTypeOverrideBy: string | null;
+  deviceTypeOverrideAt: string | null;
+  environmentChanged: boolean;
+  environmentChangeReason: string | null;
   platform: string | null;
   osName: string | null;
   browser: string | null;
@@ -63,6 +69,12 @@ type SiteDeviceRow = {
   public_key_jwk: string;
   status: SiteDeviceStatus;
   device_type: SiteDeviceType;
+  detected_device_type: SiteDeviceType;
+  device_type_override: SiteDeviceType | null;
+  device_type_override_by: string | null;
+  device_type_override_at: string | null;
+  environment_changed: number;
+  environment_change_reason: string | null;
   platform: string | null;
   browser: string | null;
   user_agent: string | null;
@@ -243,6 +255,12 @@ function state(row: SiteDeviceRow): SiteDeviceState {
     deviceCode: row.display_code,
     status: row.status,
     deviceType: row.device_type,
+    detectedDeviceType: row.detected_device_type,
+    deviceTypeOverride: row.device_type_override,
+    deviceTypeOverrideBy: row.device_type_override_by,
+    deviceTypeOverrideAt: row.device_type_override_at,
+    environmentChanged: row.environment_changed === 1,
+    environmentChangeReason: row.environment_change_reason,
     platform: row.platform,
     osName: row.os_name,
     browser: row.browser,
@@ -282,8 +300,10 @@ function policyState(row: PolicyRow): SiteAccessPolicy {
 async function rowFor(deviceId: string) {
   const database = await getCourseDatabase();
   return database.prepare(
-    `SELECT device_id, display_code, public_key_jwk, status, device_type, platform, browser,
-            user_agent, screen_width, screen_height, installation_id, os_name, browser_version,
+    `SELECT device_id, display_code, public_key_jwk, status, device_type, detected_device_type,
+            device_type_override, device_type_override_by, device_type_override_at, environment_changed,
+            environment_change_reason, platform, browser, user_agent, screen_width, screen_height, installation_id,
+            os_name, browser_version,
             mobile_hint, touch_points, viewport_width, viewport_height, pixel_ratio, pwa_mode, language,
             timezone, classification_confidence, classification_reason, metadata_updated_at,
             label, edit_enabled, calendar_enabled, created_at, approved_at, blocked_at, last_seen_at, last_activity_at
@@ -370,30 +390,50 @@ export async function registerSiteDevice(publicKey: unknown, metadataValue: unkn
   const database = await getCourseDatabase();
   const existing = await rowFor(deviceId);
   if (existing) {
+    const environmentReasons: string[] = [];
+    const previousDetected = existing.detected_device_type || existing.device_type;
+    if (previousDetected !== classification.type) environmentReasons.push(`Loại tự động đổi ${previousDetected} → ${classification.type}`);
+    if (existing.os_name && osName && existing.os_name !== osName) environmentReasons.push(`Hệ điều hành đổi ${existing.os_name} → ${osName}`);
+    if (existing.installation_id && installationId && existing.installation_id !== installationId) environmentReasons.push("Installation ID thay đổi");
+    const environmentChanged = environmentReasons.length > 0;
+    const environmentReason = environmentReasons.join("; ").slice(0, 280) || null;
     await database.prepare(
-      `UPDATE site_access_devices SET device_type = ?, platform = ?, os_name = ?, browser = ?, browser_version = ?,
+      `UPDATE site_access_devices SET detected_device_type = ?,
+              device_type = CASE WHEN device_type_override IS NULL THEN ? ELSE device_type END,
+              platform = ?, os_name = ?, browser = ?, browser_version = ?,
               user_agent = ?, installation_id = COALESCE(?, installation_id), screen_width = ?, screen_height = ?,
               viewport_width = ?, viewport_height = ?, pixel_ratio = ?, mobile_hint = ?, touch_points = ?, pwa_mode = ?,
               language = ?, timezone = ?, classification_confidence = ?, classification_reason = ?,
+              environment_changed = CASE WHEN ? = 1 THEN 1 ELSE environment_changed END,
+              environment_change_reason = CASE WHEN ? = 1 THEN ? ELSE environment_change_reason END,
               metadata_updated_at = CURRENT_TIMESTAMP, last_seen_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
         WHERE device_id = ?`,
     ).bind(
-      classification.type, platform, osName, browserInfo.name, browserInfo.version, userAgent || null, installationId,
+      classification.type, classification.type, platform, osName, browserInfo.name, browserInfo.version, userAgent || null, installationId,
       screenWidth, screenHeight, viewportWidth, viewportHeight, pixelRatio, mobileHint ? 1 : 0, touchPoints, pwaMode ? 1 : 0,
-      language, timezone, classification.confidence, classification.reason, deviceId,
+      language, timezone, classification.confidence, classification.reason, environmentChanged ? 1 : 0,
+      environmentChanged ? 1 : 0, environmentReason, deviceId,
     ).run();
+    if (environmentChanged) {
+      await auditHealthControlEvent("system", "site_device_environment_changed", deviceId, {
+        deviceCode: existing.display_code,
+        previousDetectedDeviceType: previousDetected,
+        detectedDeviceType: classification.type,
+        reason: environmentReason,
+      });
+    }
     const updated = await rowFor(deviceId);
     return state(updated ?? existing);
   }
   const status: SiteDeviceStatus = autoApprove ? "approved" : "pending";
   await database.prepare(
     `INSERT INTO site_access_devices
-      (device_id, display_code, public_key_jwk, status, device_type, platform, os_name, browser, browser_version,
+      (device_id, display_code, public_key_jwk, status, device_type, detected_device_type, platform, os_name, browser, browser_version,
        user_agent, installation_id, screen_width, screen_height, viewport_width, viewport_height, pixel_ratio,
        mobile_hint, touch_points, pwa_mode, language, timezone, classification_confidence, classification_reason, approved_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${autoApprove ? "CURRENT_TIMESTAMP" : "NULL"})`,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ${autoApprove ? "CURRENT_TIMESTAMP" : "NULL"})`,
   ).bind(
-    deviceId, displayCodeFor(deviceId), serialized, status, classification.type, platform, osName, browserInfo.name,
+    deviceId, displayCodeFor(deviceId), serialized, status, classification.type, classification.type, platform, osName, browserInfo.name,
     browserInfo.version, userAgent || null, installationId, screenWidth, screenHeight, viewportWidth, viewportHeight,
     pixelRatio, mobileHint ? 1 : 0, touchPoints, pwaMode ? 1 : 0, language, timezone,
     classification.confidence, classification.reason,
