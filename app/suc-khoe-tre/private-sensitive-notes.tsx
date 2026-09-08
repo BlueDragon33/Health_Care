@@ -1,19 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { deleteVaultRecord, listVaultRecords, putVaultRecord, type VaultPayloadEnvelope } from "./health-secure-vault";
-import {
-  HEALTH_VIEWER_ROLE_LABELS,
-  HEALTH_VISIBILITY_LABELS,
-  PROFILE_PRIVACY_CHANGED_EVENT,
-  canViewerAccessDomain,
-  createDefaultPrivacyPolicy,
-  loadProfilePrivacyPolicy,
-  loadViewerRole,
-  type HealthProfilePrivacyPolicy,
-  type HealthViewerRole,
-} from "./health-profile-privacy";
-import { useSecureVaultSession } from "./secure-vault-session";
+import { HEALTH_VIEWER_ROLE_LABELS } from "./health-profile-privacy";
+import { useSensitiveVaultDomain } from "./use-sensitive-vault-domain";
 
 export const PRIVATE_SENSITIVE_NOTES_DOMAIN_ID = "records-appointments-documents";
 const PRIVATE_NOTE_KIND = "private-note-v1";
@@ -39,40 +29,21 @@ function formatDateTime(value: string) {
 }
 
 export default function PrivateSensitiveNotes() {
-  const { profileId, status, key, refreshRecordCount } = useSecureVaultSession();
-  const [policy, setPolicy] = useState<HealthProfilePrivacyPolicy>(() => createDefaultPrivacyPolicy(profileId));
-  const [role, setRole] = useState<HealthViewerRole>("caregiver");
-  const [privacyReady, setPrivacyReady] = useState(false);
+  const {
+    profileId,
+    status,
+    key,
+    refreshRecordCount,
+    role,
+    privacyReady,
+    visibility,
+    visibilityLabel,
+    privacyAllowed,
+  } = useSensitiveVaultDomain(PRIVATE_SENSITIVE_NOTES_DOMAIN_ID);
   const [notes, setNotes] = useState<PrivateNoteEnvelope[]>([]);
   const [draft, setDraft] = useState("");
   const [notice, setNotice] = useState("");
   const [loading, setLoading] = useState(false);
-
-  const refreshPrivacy = useCallback(() => {
-    setPolicy(loadProfilePrivacyPolicy(profileId));
-    setRole(loadViewerRole());
-    setPrivacyReady(true);
-  }, [profileId]);
-
-  useEffect(() => {
-    const timer = window.setTimeout(refreshPrivacy, 0);
-    const changed = (event: Event) => {
-      const detail = (event as CustomEvent<{ kind?: string; profileId?: string }>).detail;
-      if (detail?.kind === "policy" && detail.profileId && detail.profileId !== profileId) return;
-      refreshPrivacy();
-    };
-    window.addEventListener(PROFILE_PRIVACY_CHANGED_EVENT, changed);
-    return () => {
-      window.clearTimeout(timer);
-      window.removeEventListener(PROFILE_PRIVACY_CHANGED_EVENT, changed);
-    };
-  }, [profileId, refreshPrivacy]);
-
-  const visibility = policy.domainVisibility[PRIVATE_SENSITIVE_NOTES_DOMAIN_ID] ?? "unconfigured";
-  const privacyAllowed = useMemo(
-    () => canViewerAccessDomain(policy, PRIVATE_SENSITIVE_NOTES_DOMAIN_ID, role),
-    [policy, role],
-  );
 
   const loadNotes = useCallback(async () => {
     if (!privacyAllowed || status !== "unlocked" || !key) {
@@ -140,12 +111,12 @@ export default function PrivateSensitiveNotes() {
   return <section className="private-notes" aria-label="Ghi chú riêng tư mã hóa">
     <header className="private-notes-head">
       <div>
-        <span className="hf-kicker">Vault-backed proof · dữ liệu rất nhạy cảm</span>
+        <span className="hf-kicker">Vault-backed · dữ liệu rất nhạy cảm</span>
         <h3>Ghi chú riêng tư</h3>
-        <p>Module thử nghiệm nền cho dữ liệu nhạy cảm: chỉ đọc/ghi khi đúng quyền riêng tư của hồ sơ và Secure Vault đang mở.</p>
+        <p>Chỉ đọc/ghi khi đúng quyền riêng tư của hồ sơ và Secure Vault đang mở.</p>
       </div>
       <div className="private-notes-state">
-        <strong>{privacyReady ? HEALTH_VISIBILITY_LABELS[visibility] : "Đang đọc quyền…"}</strong>
+        <strong>{privacyReady ? visibilityLabel : "Đang đọc quyền…"}</strong>
         <span>{HEALTH_VIEWER_ROLE_LABELS[role]}</span>
       </div>
     </header>
