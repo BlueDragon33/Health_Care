@@ -1,0 +1,32 @@
+name: Patch Symptom Episode Tracking V1
+
+on:
+  push:
+    branches:
+      - feature/symptom-illness-episode-tracking-v1
+    paths:
+      - .symptom-episode-tracking-v1-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/symptom-illness-episode-tracking-v1
+      - name: Integrate Symptom Episode Tracking V1
+        run: python .github/scripts/patch-symptom-episode-tracking-v1.py
+      - name: Commit integration
+        run: |
+          if git diff --quiet; then
+            echo "No integration changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx app/suc-khoe-tre/page.tsx package.json
+          git commit -m "feat(health): integrate symptom episode tracking v1"
+          git push origin HEAD:feature/symptom-illness-episode-tracking-v1
