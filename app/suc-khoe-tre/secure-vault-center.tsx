@@ -1,0 +1,149 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import {
+  VAULT_AUTO_LOCK_MS,
+  countVaultRecords,
+  setupVault,
+  unlockVault,
+  vaultConfigured,
+  type VaultStatus,
+} from "./health-secure-vault";
+
+function statusLabel(status: VaultStatus) {
+  if (status === "unlocked") return "Đang mở trong bộ nhớ phiên";
+  if (status === "locked") return "Đã khóa";
+  return "Chưa cấu hình";
+}
+
+export default function SecureVaultCenter({ profileId }: { profileId: string }) {
+  const [status, setStatus] = useState<VaultStatus>("not-configured");
+  const [pin, setPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [vaultKey, setVaultKey] = useState<CryptoKey | null>(null);
+  const [recordCount, setRecordCount] = useState<number | null>(null);
+  const [notice, setNotice] = useState("");
+  const lockTimer = useRef<number | null>(null);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setStatus(vaultConfigured(profileId) ? "locked" : "not-configured");
+      setVaultKey(null);
+      setRecordCount(null);
+      setPin("");
+      setConfirmPin("");
+      setNotice("");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [profileId]);
+
+  useEffect(() => {
+    if (!vaultKey) return;
+    const arm = () => {
+      if (lockTimer.current !== null) window.clearTimeout(lockTimer.current);
+      lockTimer.current = window.setTimeout(() => {
+        setVaultKey(null);
+        setStatus("locked");
+        setRecordCount(null);
+        setNotice("Secure Vault đã tự khóa sau thời gian không hoạt động.");
+      }, VAULT_AUTO_LOCK_MS);
+    };
+    const activity = () => arm();
+    arm();
+    window.addEventListener("pointerdown", activity, { passive: true });
+    window.addEventListener("keydown", activity);
+    window.addEventListener("touchstart", activity, { passive: true });
+    return () => {
+      if (lockTimer.current !== null) window.clearTimeout(lockTimer.current);
+      lockTimer.current = null;
+      window.removeEventListener("pointerdown", activity);
+      window.removeEventListener("keydown", activity);
+      window.removeEventListener("touchstart", activity);
+    };
+  }, [vaultKey]);
+
+  async function configure() {
+    setNotice("");
+    if (pin.length < 6) { setNotice("Mã khóa cần ít nhất 6 ký tự."); return; }
+    if (pin !== confirmPin) { setNotice("Hai lần nhập mã khóa chưa khớp."); return; }
+    try {
+      const key = await setupVault(profileId, pin);
+      setVaultKey(key);
+      setStatus("unlocked");
+      setRecordCount(0);
+      setPin("");
+      setConfirmPin("");
+      setNotice("Secure Vault đã được tạo. Khóa giải mã chỉ đang nằm trong bộ nhớ phiên.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Không thể tạo Secure Vault.");
+    }
+  }
+
+  async function unlock() {
+    setNotice("");
+    try {
+      const key = await unlockVault(profileId, pin);
+      setVaultKey(key);
+      setStatus("unlocked");
+      setPin("");
+      setRecordCount(await countVaultRecords(profileId));
+      setNotice("Đã mở Secure Vault cho hồ sơ đang chọn.");
+    } catch (error) {
+      setVaultKey(null);
+      setStatus("locked");
+      setNotice(error instanceof Error ? error.message : "Không thể mở Secure Vault.");
+    }
+  }
+
+  function lockNow() {
+    setVaultKey(null);
+    setStatus("locked");
+    setRecordCount(null);
+    setPin("");
+    setConfirmPin("");
+    setNotice("Đã khóa Secure Vault. Khóa giải mã đã được bỏ khỏi state phiên.");
+  }
+
+  return <section className="vault-center" aria-label="Secure Health Vault">
+    <header className="vault-head">
+      <div>
+        <span className="hf-kicker">Secure Health Vault V1</span>
+        <h3>Kho mã hóa cho dữ liệu rất nhạy cảm</h3>
+        <p>Vault dành cho các module sâu như tâm lý, dậy thì, chu kỳ, thuốc và tài liệu y tế khi chúng được triển khai.</p>
+      </div>
+      <div className={`vault-status status-${status}`}><span /> <strong>{statusLabel(status)}</strong></div>
+    </header>
+
+    <div className="vault-boundary">
+      <strong>Không di trú ngầm dữ liệu hiện có.</strong>
+      <span>Dữ liệu thói quen/tăng trưởng hiện tại vẫn theo storage baseline. Chỉ payload được ghi qua Vault API mới được AES-GCM mã hóa trong IndexedDB.</span>
+    </div>
+
+    {status === "not-configured" ? <div className="vault-form">
+      <label><span>Tạo mã khóa local</span><input type="password" autoComplete="new-password" value={pin} onChange={(event) => setPin(event.target.value)} placeholder="Ít nhất 6 ký tự" /></label>
+      <label><span>Nhập lại mã khóa</span><input type="password" autoComplete="new-password" value={confirmPin} onChange={(event) => setConfirmPin(event.target.value)} placeholder="Nhập lại" /></label>
+      <button type="button" className="hf-primary" onClick={() => void configure()}>Tạo Secure Vault</button>
+    </div> : null}
+
+    {status === "locked" ? <div className="vault-form compact">
+      <label><span>Mã khóa</span><input type="password" autoComplete="current-password" value={pin} onChange={(event) => setPin(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter") void unlock(); }} /></label>
+      <button type="button" className="hf-primary" onClick={() => void unlock()}>Mở Vault</button>
+    </div> : null}
+
+    {status === "unlocked" ? <div className="vault-open-panel">
+      <div><span>Bản ghi mã hóa</span><strong>{recordCount ?? "—"}</strong></div>
+      <div><span>Tự khóa</span><strong>10 phút không hoạt động</strong></div>
+      <button type="button" className="hf-secondary" onClick={lockNow}>Khóa ngay</button>
+    </div> : null}
+
+    {notice ? <div className="vault-notice" role="status">{notice}</div> : null}
+
+    <div className="vault-safety-grid">
+      <article><strong>PIN không được lưu</strong><span>PIN chỉ dùng để dẫn xuất khóa; khóa giải mã chỉ giữ trong bộ nhớ khi Vault đang mở.</span></article>
+      <article><strong>Không gửi sang Admin</strong><span>Vault key, PIN và ciphertext không được đưa vào Control Plane.</span></article>
+      <article><strong>Không hứa khôi phục</strong><span>V1 chưa có recovery key. Quên mã khóa có thể khiến dữ liệu Vault không thể giải mã; chưa nên dùng cho hồ sơ duy nhất không có bản sao phù hợp.</span></article>
+    </div>
+
+    <p className="vault-footnote">Mã hóa phía trình duyệt làm giảm rủi ro đọc trực tiếp dữ liệu lưu trữ, nhưng không được coi là bảo vệ tuyệt đối trước mã độc/XSS khi ứng dụng đang mở khóa.</p>
+  </section>;
+}
