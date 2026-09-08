@@ -635,7 +635,24 @@ export async function getHealthControlStatus() {
   ).bind(now, now).first<{ total: number; active: number; revoked: number; expired: number }>();
   return {
     application: "child-health" as const,
+    canonicalApplication: "suc-khoe-y-te" as const,
+    applicationAliases: ["child-health", "suc-khoe-tre"] as const,
+    controlProtocol: "health-control-plane" as const,
     contractVersion: 3,
+    capabilities: [
+      "device-enrollment-v2",
+      "device-classification-v2",
+      "device-review-v1",
+      "device-access-v1",
+      "session-control-v1",
+      "policy-control-v1",
+      "feature-permissions-v1",
+      "content-review-v1",
+    ] as const,
+    boundary: {
+      healthDataInControlPlane: false,
+      deviceIdentity: "installation+p256" as const,
+    },
     service: policy.accessEnabled ? "online" as const : "paused" as const,
     serverTime: new Date().toISOString(),
     devices: {
