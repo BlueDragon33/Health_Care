@@ -1,6 +1,6 @@
 export type TaskKey = "breakfast" | "water" | "movement" | "teethMorning" | "teethEvening" | "sleep";
 export type Feeling = "good" | "normal" | "unwell" | "";
-export type ReminderRepeat = "once" | "daily" | "weekdays" | "weekly";
+export type ReminderRepeat = "once" | "daily" | "weekdays" | "weekly" | "selected-weekdays" | "monthly";
 
 export type HealthProfile = {
   name: string;
@@ -37,6 +37,7 @@ export type Reminder = {
   date: string;
   time: string;
   repeat: ReminderRepeat;
+  weekdays?: number[];
   enabled: boolean;
   lastNotifiedOccurrence?: string;
 };
@@ -206,7 +207,7 @@ function safeGrowth(value: unknown): GrowthEntry[] {
 
 function safeReminders(value: unknown): Reminder[] {
   if (!Array.isArray(value)) return [];
-  const repeats = ["once", "daily", "weekdays", "weekly"];
+  const repeats = ["once", "daily", "weekdays", "weekly", "selected-weekdays", "monthly"];
   const categories = ["nutrition", "water", "activity", "care", "growth", "appointment", "other"];
   return value.slice(-200).flatMap((item) => {
     if (!item || typeof item !== "object") return [];
@@ -222,6 +223,9 @@ function safeReminders(value: unknown): Reminder[] {
       date,
       time,
       repeat: repeats.includes(String(source.repeat)) ? source.repeat as ReminderRepeat : "once",
+      weekdays: Array.isArray(source.weekdays)
+        ? [...new Set(source.weekdays.map(Number).filter((value) => Number.isInteger(value) && value >= 0 && value <= 6))].sort((a, b) => a - b)
+        : undefined,
       enabled: source.enabled !== false,
       lastNotifiedOccurrence: cleanString(source.lastNotifiedOccurrence, 50) || undefined,
     }];
