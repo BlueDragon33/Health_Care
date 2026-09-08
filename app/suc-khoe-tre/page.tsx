@@ -17,6 +17,7 @@ import "./preventive-care-records.css";
 import "./private-sensitive-notes.css";
 import "./control-plane.css";
 import "./premium-health-ui.css";
+import "./premium-health-ui-v2.css";
 
 export const dynamic = "force-dynamic";
 
