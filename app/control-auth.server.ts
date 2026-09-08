@@ -4,12 +4,28 @@ const CONTROL_CENTER_ORIGIN = "https://learning-management.boiech-ai.workers.dev
 const TOKEN_AUDIENCE = "child-health-control";
 const TOKEN_ISSUER = "quan-ly-hoc-tap";
 
+export type ControlSecretScope = "health" | "legacy-global" | "unconfigured";
+
 export type ControlServiceIdentity = {
   actor: string;
   role: string;
   controlDeviceId: string | null;
   ticketId: string | null;
 };
+
+async function controlSecretConfig(): Promise<{ secret: string; scope: ControlSecretScope }> {
+  const workers = await import("cloudflare:workers");
+  const values = workers.env as unknown as Record<string, unknown>;
+  const healthSecret = typeof values.HEALTH_CONTROL_SERVICE_SECRET === "string" ? values.HEALTH_CONTROL_SERVICE_SECRET : "";
+  const legacySecret = typeof values.CONTROL_SERVICE_SECRET === "string" ? values.CONTROL_SERVICE_SECRET : "";
+  if (healthSecret.length >= 32) return { secret: healthSecret, scope: "health" };
+  if (legacySecret.length >= 32) return { secret: legacySecret, scope: "legacy-global" };
+  return { secret: "", scope: "unconfigured" };
+}
+
+export async function getControlSecretScope(): Promise<ControlSecretScope> {
+  return (await controlSecretConfig()).scope;
+}
 
 async function digest(value: string) { return new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value))); }
 async function secureEqual(left: string, right: string) {
@@ -46,11 +62,10 @@ async function browserTicket(secret: string, supplied: string): Promise<ControlS
   return { actor, role, controlDeviceId, ticketId };
 }
 export async function requireControlService(request: Request): Promise<ControlServiceIdentity> {
-  const workers = await import("cloudflare:workers");
-  const configured = (workers.env as unknown as Record<string, unknown>).CONTROL_SERVICE_SECRET;
+  const { secret: configured } = await controlSecretConfig();
   const authorization = request.headers.get("authorization") ?? "";
   const supplied = authorization.startsWith("Bearer ") ? authorization.slice(7) : "";
-  if (typeof configured !== "string" || configured.length < 32 || supplied.length < 32) throw new DeviceAccessError("Dịch vụ quản trị không được phép truy cập.", 403, "CONTROL_SERVICE_FORBIDDEN");
+  if (configured.length < 32 || supplied.length < 32) throw new DeviceAccessError("Dịch vụ quản trị không được phép truy cập.", 403, "CONTROL_SERVICE_FORBIDDEN");
   if (!(await secureEqual(configured, supplied))) {
     const ticket = await browserTicket(configured, supplied);
     if (!ticket) throw new DeviceAccessError("Vé quản trị đã hết hạn hoặc không hợp lệ.", 403, "CONTROL_TICKET_FORBIDDEN");
