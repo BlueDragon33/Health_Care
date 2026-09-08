@@ -5,8 +5,16 @@ import { dirname, resolve } from "node:path";
 const here = dirname(fileURLToPath(import.meta.url));
 const dataPath = resolve(here, "../app/suc-khoe-tre/who-bmi-lms-9-18.ts");
 const enginePath = resolve(here, "../app/suc-khoe-tre/who-bmi-reference.ts");
+const trendPath = resolve(here, "../app/suc-khoe-tre/growth-trend.tsx");
+const trendCssPath = resolve(here, "../app/suc-khoe-tre/growth-trend.css");
+const frameworkPath = resolve(here, "../app/suc-khoe-tre/health-framework.tsx");
+const pagePath = resolve(here, "../app/suc-khoe-tre/page.tsx");
 const dataSource = readFileSync(dataPath, "utf8");
 const engineSource = readFileSync(enginePath, "utf8");
+const trendSource = readFileSync(trendPath, "utf8");
+const trendCss = readFileSync(trendCssPath, "utf8");
+const frameworkSource = readFileSync(frameworkPath, "utf8");
+const pageSource = readFileSync(pagePath, "utf8");
 
 function rowsFor(name) {
   const pattern = new RegExp(`export const ${name}:[\\s\\S]*?= \\[([\\s\\S]*?)\\] as const;`);
@@ -46,4 +54,30 @@ if (engineSource.match(/BMI người lớn/g)?.length && !engineSource.includes(
   throw new Error("Cần giữ ranh giới rõ giữa BMI-for-age và BMI người lớn");
 }
 
-console.log("WHO BMI-for-age 9–18 validation PASS: 120 tháng × 2 giới, các mốc kiểm tra khớp bảng tham chiếu.");
+for (const token of [
+  "filterGrowthEntries",
+  '"3m"',
+  '"6m"',
+  '"1y"',
+  '"all"',
+  "assessWhoBmiForAge",
+  "BMI-for-age theo WHO 2007",
+  "−3 SD",
+  "−2 SD",
+  "+1 SD",
+  "+2 SD",
+  "aria-pressed",
+  "không dự đoán",
+  "không phải chẩn đoán bệnh",
+]) {
+  if (!trendSource.includes(token)) throw new Error(`Biểu đồ tăng trưởng thiếu contract: ${token}`);
+}
+if (!trendCss.includes("growth-3d-button.is-selected") || !trendCss.includes("prefers-reduced-motion")) {
+  throw new Error("Nút chọn biểu đồ chưa đủ selected state / reduced-motion");
+}
+if (!frameworkSource.includes('import GrowthTrend from "./growth-trend"') || !frameworkSource.includes("<GrowthTrend entries={growth} profile={state.profile} />")) {
+  throw new Error("Health framework chưa tích hợp GrowthTrend");
+}
+if (!pageSource.includes('import "./growth-trend.css"')) throw new Error("Trang Health chưa nạp CSS biểu đồ tăng trưởng");
+
+console.log("WHO BMI-for-age 9–18 validation PASS: 120 tháng × 2 giới, mốc tham chiếu khớp và biểu đồ xu hướng giữ đúng ranh giới an toàn.");
