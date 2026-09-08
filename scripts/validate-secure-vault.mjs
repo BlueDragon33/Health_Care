@@ -2,6 +2,7 @@ import fs from "node:fs";
 import { webcrypto } from "node:crypto";
 
 const vault = fs.readFileSync("app/suc-khoe-tre/health-secure-vault.ts", "utf8");
+const session = fs.readFileSync("app/suc-khoe-tre/secure-vault-session.tsx", "utf8");
 const center = fs.readFileSync("app/suc-khoe-tre/secure-vault-center.tsx", "utf8");
 const styles = fs.readFileSync("app/suc-khoe-tre/secure-vault-center.css", "utf8");
 const framework = fs.readFileSync("app/suc-khoe-tre/health-framework.tsx", "utf8");
@@ -9,7 +10,7 @@ const page = fs.readFileSync("app/suc-khoe-tre/page.tsx", "utf8");
 const packageJson = fs.readFileSync("package.json", "utf8");
 
 function need(source, token, label) {
-  if (!source.includes(token)) throw new Error(`Secure Vault V1 thiếu ${label}: ${token}`);
+  if (!source.includes(token)) throw new Error(`Secure Vault thiếu ${label}: ${token}`);
 }
 
 for (const token of [
@@ -41,16 +42,30 @@ for (const token of [
   'existingBaselineStateNotSilentlyMigrated: true',
 ]) need(vault, token, "crypto/storage contract");
 
-if (/\bfetch\s*\(/.test(vault) || /\bfetch\s*\(/.test(center)) throw new Error("Secure Vault V1 không được gọi network/API trực tiếp");
-if (/\/api\/control|CONTROL_SERVICE_SECRET|control-plane/i.test(vault)) throw new Error("Vault engine không được phụ thuộc Control Plane");
+if (/\bfetch\s*\(/.test(vault + session + center)) throw new Error("Secure Vault không được gọi network/API trực tiếp");
+if (/\/api\/control|CONTROL_SERVICE_SECRET|control-plane/i.test(vault + session)) throw new Error("Vault engine/session không được phụ thuộc Control Plane");
 if (/localStorage\.setItem\([^\n]*(?:pin|vaultKey|payload)/i.test(vault)) throw new Error("Không được persist PIN, derived key hoặc health payload trong localStorage");
-if (/localStorage|sessionStorage/.test(center)) throw new Error("Vault UI không được tự persist PIN/key trong Web Storage");
-if (/console\.(?:log|debug|info|warn|error)\([^\n]*(?:pin|vaultKey|ciphertext|payload)/i.test(vault + center)) throw new Error("Không được log vật liệu Vault nhạy cảm");
+if (/localStorage|sessionStorage/.test(session + center)) throw new Error("Vault session/UI không được tự persist PIN/key trong Web Storage");
+if (/console\.(?:log|debug|info|warn|error)\([^\n]*(?:pin|vaultKey|ciphertext|payload)/i.test(vault + session + center)) throw new Error("Không được log vật liệu Vault nhạy cảm");
 
 for (const token of [
-  'import SecureVaultCenter from "./secure-vault-center"',
-  '<SecureVaultCenter key={`vault-${activeProfileId}`} profileId={activeProfileId} />',
+  'createContext<SecureVaultSessionValue | null>(null)',
+  'SecureVaultSessionProvider',
+  'useSecureVaultSession()',
+  'setKey(null)',
+  'lock("idle")',
+  'lock("pagehide")',
+  'window.addEventListener("pagehide", pagehide)',
+  'profileSwitchDropsPreviousKeyReference: true',
+  'noPersistentSessionKey: true',
+]) need(session, token, "shared session contract");
+
+for (const token of [
+  'import { SecureVaultSessionProvider } from "./secure-vault-session"',
+  '<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>',
+  '<SecureVaultCenter />',
 ]) need(framework, token, "runtime integration");
+need(center, 'useSecureVaultSession()', "center consumes shared session");
 need(page, 'import "./secure-vault-center.css"', "stylesheet integration");
 need(packageJson, "validate-secure-vault.mjs", "CI gate");
 
@@ -62,9 +77,7 @@ for (const token of [
 ]) need(styles, token, "3D/accessibility style");
 
 for (const token of [
-  'vaultRuntimeSupported()',
-  'setVaultKey(null)',
-  'VAULT_AUTO_LOCK_MS',
+  'lock("manual")',
   'Không hứa khôi phục',
   'Không gửi sang Admin',
   'Cô lập theo hồ sơ',
@@ -123,4 +136,4 @@ try {
 }
 if (!crossProfileRejected) throw new Error("Ciphertext profile A không được giải mã dưới AAD profile B");
 
-console.log("Secure Health Vault V1 PASS: AES-GCM/PBKDF2 round-trip, wrong-PIN rejection, profile-bound AAD isolation, memory-only key UX, IndexedDB payload storage and Control Plane separation are enforced.");
+console.log("Secure Health Vault V2 session PASS: crypto/storage boundaries plus one active-profile memory-only session, auto-lock and profile-switch key disposal are wired.");
