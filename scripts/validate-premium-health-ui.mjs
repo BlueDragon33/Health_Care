@@ -45,7 +45,16 @@ for (const token of [
 
 need(page, 'import "./premium-health-ui.css";', "theme import");
 const imports = [...page.matchAll(/import\s+"\.\/(.+?\.css)";/g)].map((match) => match[1]);
-if (imports.at(-1) !== "premium-health-ui.css") throw new Error("Premium theme phải được import cuối để override visual layer mà không sửa business logic");
+const v1Index = imports.indexOf("premium-health-ui.css");
+const v2Index = imports.indexOf("premium-health-ui-v2.css");
+if (v1Index < 0) throw new Error("Premium Health UI V1 stylesheet phải được nạp");
+if (v2Index >= 0) {
+  if (v2Index !== v1Index + 1 || imports.at(-1) !== "premium-health-ui-v2.css") {
+    throw new Error("Khi có Premium UI V2, V1 phải nằm ngay trước V2 và V2 phải là stylesheet cuối");
+  }
+} else if (imports.at(-1) !== "premium-health-ui.css") {
+  throw new Error("Premium theme V1 phải được import cuối khi chưa có lớp refinement mới");
+}
 
 if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET|healthData/i.test(quick)) {
   throw new Error("Quick Actions chỉ được điều hướng UI, không được gọi Control Plane hoặc xử lý dữ liệu sức khỏe");
