@@ -1,0 +1,28 @@
+name: Patch Multi Profile V1
+
+on:
+  push:
+    branches:
+      - feature/multi-profile-registry-v1
+    paths:
+      - .multi-profile-v1-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/multi-profile-registry-v1
+      - name: Apply multi-profile runtime patch
+        run: python .github/scripts/patch-multi-profile-v1.py
+      - name: Commit framework integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx app/suc-khoe-tre/page.tsx app/suc-khoe-tre/health-profile-contracts.ts package.json
+          git diff --cached --quiet || git commit -m "feat(profiles): integrate multi-profile registry v1"
+          git push
