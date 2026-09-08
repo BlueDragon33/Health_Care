@@ -49,7 +49,7 @@ need(framework, '<HealthVaultBoundary profileId={activeProfileId}>', "active-pro
 need(framework, '<PrivacyCenter profileId={activeProfileId} />', "profile-scoped privacy center");
 need(page, 'import "./privacy-center.css"', "privacy stylesheet");
 
-if (framework.includes('<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>')) {
+if (framework.includes('<HealthVaultBoundary profileId={activeProfileId}>')) {
   throw new Error("Profile Privacy validator phát hiện provider cũ chỉ nằm trong Profile section; phải dùng HealthVaultBoundary chung cho active profile");
 }
 if (/age\s*[>=<]+\s*(13|14|15|16|18)/.test(engine)) throw new Error("Privacy V1 không được hard-code cutoff pháp lý theo tuổi");

@@ -54,7 +54,7 @@ if (!framework.includes('<HealthVaultBoundary profileId={activeProfileId}>')) {
   failures.push("Health content must share one active-profile Vault boundary across navigation");
 }
 
-if (framework.includes('{activeProfileId ? <SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>')) {
+if (framework.includes('{activeProfileId ? <HealthVaultBoundary profileId={activeProfileId}>')) {
   failures.push("Nested profile-only SecureVaultSessionProvider must be removed after shared boundary migration");
 }
 

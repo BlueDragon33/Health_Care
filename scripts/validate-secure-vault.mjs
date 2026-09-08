@@ -67,7 +67,7 @@ for (const token of [
   '<HealthVaultBoundary profileId={activeProfileId}>',
   '<SecureVaultCenter />',
 ]) need(framework, token, "runtime integration");
-if (framework.includes('<SecureVaultSessionProvider key={`vault-session-${activeProfileId}`} profileId={activeProfileId}>')) {
+if (framework.includes('<HealthVaultBoundary profileId={activeProfileId}>')) {
   throw new Error("Secure Vault validator phát hiện provider cũ chỉ nằm trong Profile section; phải dùng HealthVaultBoundary chung");
 }
 need(center, 'useSecureVaultSession()', "center consumes shared session");
