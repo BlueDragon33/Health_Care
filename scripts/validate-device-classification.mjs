@@ -33,11 +33,20 @@ const required = {
     "device-review-v1",
     "healthDataInControlPlane",
   ],
+  "app/control-auth.server.ts": [
+    "HEALTH_CONTROL_SERVICE_SECRET",
+    "CONTROL_SERVICE_SECRET",
+    "legacy-global",
+    "getControlSecretScope",
+  ],
   "app/api/control/status/route.ts": [
     "HEALTH_BUILD_REVISION",
     "HEALTH_BUILD_SOURCE",
     "buildRevision",
     "buildSource",
+    "app-scoped-secret-v1",
+    "controlAuth",
+    "secretScope",
   ],
   ".github/workflows/deploy.yml": [
     "workflow_dispatch",
@@ -82,4 +91,4 @@ for (const [file, tokens] of Object.entries(required)) {
   }
 }
 
-console.log("Device management V3 PASS: classification, review, canonical identity, capabilities and deployed revision contract are aligned.");
+console.log("Device management V3 PASS: classification, review, canonical identity, capabilities, app-scoped control secret and deployed revision contract are aligned.");
