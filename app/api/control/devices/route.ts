@@ -12,11 +12,18 @@ import {
 export const dynamic = "force-dynamic";
 export function OPTIONS(request: Request) { return controlPreflight(request); }
 
+type DeviceType = "desktop" | "phone" | "tablet";
 type Row = {
   device_id: string;
   display_code: string;
   status: "pending" | "approved" | "blocked";
-  device_type: "desktop" | "phone" | "tablet";
+  device_type: DeviceType;
+  detected_device_type: DeviceType;
+  device_type_override: DeviceType | null;
+  device_type_override_by: string | null;
+  device_type_override_at: string | null;
+  environment_changed: number;
+  environment_change_reason: string | null;
   platform: string | null;
   os_name: string | null;
   browser: string | null;
@@ -44,8 +51,20 @@ type Row = {
   last_activity_at: string;
 };
 
+const deviceTypeLabels: Record<DeviceType, string> = {
+  desktop: "Máy tính",
+  phone: "Điện thoại",
+  tablet: "Máy tính bảng",
+};
+
 function canView(role: string) { return ["viewer", "reviewer", "publisher", "owner"].includes(role); }
 function canManage(role: string) { return ["publisher", "owner"].includes(role); }
+
+function automaticLabel(row: Row) {
+  const environment = row.os_name || row.platform || "Nền tảng chưa rõ";
+  const browser = row.browser_version ? `${row.browser} ${row.browser_version}` : row.browser || "Trình duyệt chưa rõ";
+  return `${deviceTypeLabels[row.device_type]} · ${environment} · ${browser}`;
+}
 
 function view(row: Row, policy: SiteAccessPolicy) {
   const lastSeen = Date.parse(row.last_seen_at);
@@ -58,6 +77,13 @@ function view(row: Row, policy: SiteAccessPolicy) {
     deviceCode: row.display_code,
     status: row.status,
     deviceType: row.device_type,
+    detectedDeviceType: row.detected_device_type,
+    deviceTypeOverride: row.device_type_override,
+    deviceTypeOverrideBy: row.device_type_override_by,
+    deviceTypeOverrideAt: row.device_type_override_at,
+    environmentChanged: row.environment_changed === 1,
+    environmentChangeReason: row.environment_change_reason,
+    autoLabel: automaticLabel(row),
     platform: row.platform,
     osName: row.os_name,
     browser: row.browser,
@@ -91,12 +117,15 @@ function view(row: Row, policy: SiteAccessPolicy) {
 async function listDevices() {
   const [database, policy] = await Promise.all([getCourseDatabase(), getSiteAccessPolicy()]);
   const rows = await database.prepare(
-    `SELECT device_id, display_code, status, device_type, platform, os_name, browser, browser_version,
-            installation_id, screen_width, screen_height, viewport_width, viewport_height, touch_points, mobile_hint,
-            pwa_mode, language, timezone, classification_confidence, classification_reason, metadata_updated_at,
-            label, edit_enabled, calendar_enabled, created_at, approved_at, blocked_at, last_seen_at, last_activity_at
+    `SELECT device_id, display_code, status, device_type, detected_device_type, device_type_override,
+            device_type_override_by, device_type_override_at, environment_changed, environment_change_reason,
+            platform, os_name, browser, browser_version, installation_id, screen_width, screen_height,
+            viewport_width, viewport_height, touch_points, mobile_hint, pwa_mode, language, timezone,
+            classification_confidence, classification_reason, metadata_updated_at, label, edit_enabled,
+            calendar_enabled, created_at, approved_at, blocked_at, last_seen_at, last_activity_at
        FROM site_access_devices
-      ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+      ORDER BY CASE WHEN environment_changed = 1 THEN 0 ELSE 1 END,
+               CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
                last_seen_at DESC LIMIT 300`,
   ).all<Row>();
   return rows.results.map((row) => view(row, policy));
@@ -156,6 +185,31 @@ export async function POST(request: Request) {
       await database.prepare("UPDATE site_access_devices SET label = ?, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?")
         .bind(label || null, deviceId).run();
       await auditHealthControlEvent(identity.actor, "site_device_label_updated", deviceId, { ...trace, label });
+    } else if (action === "set-device-type") {
+      const deviceType = payload.deviceType;
+      if (deviceType !== "desktop" && deviceType !== "phone" && deviceType !== "tablet") {
+        throw new DeviceAccessError("Loại thiết bị điều chỉnh không hợp lệ.", 400, "INVALID_DEVICE_TYPE");
+      }
+      await database.prepare(
+        `UPDATE site_access_devices
+            SET device_type = ?, device_type_override = ?, device_type_override_by = ?,
+                device_type_override_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE device_id = ?`,
+      ).bind(deviceType, deviceType, identity.actor.trim().slice(0, 160) || "system", deviceId).run();
+      await auditHealthControlEvent(identity.actor, "site_device_type_overridden", deviceId, { ...trace, deviceType });
+    } else if (action === "clear-device-type") {
+      await database.prepare(
+        `UPDATE site_access_devices
+            SET device_type = detected_device_type, device_type_override = NULL, device_type_override_by = NULL,
+                device_type_override_at = NULL, updated_at = CURRENT_TIMESTAMP
+          WHERE device_id = ?`,
+      ).bind(deviceId).run();
+      await auditHealthControlEvent(identity.actor, "site_device_type_override_cleared", deviceId, trace);
+    } else if (action === "ack-environment") {
+      await database.prepare(
+        "UPDATE site_access_devices SET environment_changed = 0, environment_change_reason = NULL, updated_at = CURRENT_TIMESTAMP WHERE device_id = ?",
+      ).bind(deviceId).run();
+      await auditHealthControlEvent(identity.actor, "site_device_environment_acknowledged", deviceId, trace);
     } else {
       throw new DeviceAccessError("Thao tác quản lý thiết bị không hợp lệ.", 400, "INVALID_DEVICE_ACTION");
     }
