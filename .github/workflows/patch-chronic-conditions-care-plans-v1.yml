@@ -1,0 +1,32 @@
+name: Patch Chronic Conditions Care Plans V1
+
+on:
+  push:
+    branches:
+      - feature/chronic-conditions-care-plans-v1
+    paths:
+      - .chronic-conditions-care-plans-v1-trigger
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/chronic-conditions-care-plans-v1
+      - name: Integrate Chronic Conditions Care Plans V1
+        run: python .github/scripts/patch-chronic-conditions-care-plans-v1.py
+      - name: Commit integration
+        run: |
+          if git diff --quiet; then
+            echo "No integration changes needed"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx app/suc-khoe-tre/page.tsx package.json
+          git commit -m "feat(health): integrate chronic conditions care plans v1"
+          git push origin HEAD:feature/chronic-conditions-care-plans-v1
