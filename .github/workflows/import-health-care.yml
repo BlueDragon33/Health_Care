@@ -32,10 +32,16 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rsync -a --delete \
-            --exclude '.git/' \
-            --exclude '.github/' \
-            _source/suc-khoe-tre/ ./
+
+          # Clean the target working tree without touching its Git metadata,
+          # this migration workflow, or the temporary source checkout.
+          find . -mindepth 1 -maxdepth 1 \
+            ! -name '.git' \
+            ! -name '.github' \
+            ! -name '_source' \
+            -exec rm -rf {} +
+
+          cp -a _source/suc-khoe-tre/. ./
           rm -rf _source
           rm -f .migration-trigger
 
@@ -46,10 +52,10 @@ jobs:
 
           - source repository: `BlueDragon33/BOIECH_AI`
           - source path: `suc-khoe-tre/`
-          - source ref: `main`
+          - source ref at migration: `main`
 
-          `Health_Care` is now the canonical repository for the standalone Sức khỏe Y tế 9–18 application.
-          The Admin Center remains a separate control plane and must communicate through explicit Control APIs only.
+          `Health_Care` is the canonical repository for the standalone Sức khỏe Y tế 9–18 application.
+          The Admin Center remains a separate control plane and communicates only through explicit Control APIs.
           EOF
 
       - name: Commit imported tree
