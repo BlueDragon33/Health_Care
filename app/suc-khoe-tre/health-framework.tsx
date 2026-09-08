@@ -30,6 +30,7 @@ import ReminderManager, { repeatLabels } from "./reminder-manager";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PrivacyCenter from "./privacy-center";
+import SecureVaultCenter from "./secure-vault-center";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
 import {
   createHealthProfile,
@@ -439,6 +440,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Lộ trình 9–18</span><h3>4 giai đoạn liên tục</h3></div></div><div className="hf-entry-list">{HEALTH_AGE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.stage?.id ? "Hiện tại" : "Giai đoạn"}</span><strong>{stage.label}</strong><small>{stage.focus.join(" · ")}</small></article>)}</div></section>
           </div>
           {activeProfileId ? <PrivacyCenter key={activeProfileId} profileId={activeProfileId} /> : null}
+          {activeProfileId ? <SecureVaultCenter key={`vault-${activeProfileId}`} profileId={activeProfileId} /> : null}
           <div className="hf-work-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Thông báo trình duyệt</span><h3>{notificationPermission === "granted" ? "Đã cho phép" : notificationPermission === "denied" ? "Đã bị trình duyệt chặn" : notificationPermission === "unsupported" ? "Không được hỗ trợ" : "Chưa cho phép"}</h3></div></div><p className="hf-muted">Thông báo lặp được kiểm tra khi Web App đang hoạt động. Để nhắc đáng tin cậy khi ứng dụng đóng, dùng file .ics hoặc Calendar.</p><button className="hf-secondary" type="button" disabled={notificationPermission === "unsupported"} onClick={() => void requestNotifications()}>Yêu cầu quyền thông báo</button></section>
             <section className="hf-panel hf-info-panel"><span className="hf-kicker">Chuyển tiếp 16–18</span><h3>Chuẩn bị tự quản lý sức khỏe khi vào đại học</h3><p>Giai đoạn cuối ưu tiên hiểu hồ sơ cá nhân, biết lịch khám/nhắc việc, duy trì thói quen và nhận biết khi nào cần tìm trợ giúp chuyên môn. Quyền truy cập và dữ liệu vẫn tuân theo kiến trúc thiết bị hiện tại.</p></section>

@@ -136,6 +136,17 @@ function writeConfig(config: VaultConfig) {
   window.localStorage.setItem(configKey(config.profileId), JSON.stringify(config));
 }
 
+async function assertKeyMatchesProfile(key: CryptoKey, profileId: string) {
+  const config = readConfig(profileId);
+  if (!config) throw new Error("Secure Vault chưa được cấu hình cho hồ sơ này.");
+  try {
+    const check = await decryptBytes(key, profileId, config.checkIv, config.checkCiphertext);
+    if (new TextDecoder().decode(check) !== VAULT_CHECK_TEXT) throw new Error("invalid-check");
+  } catch {
+    throw new Error("Khóa Secure Vault không thuộc hồ sơ đang chọn.");
+  }
+}
+
 export function vaultRuntimeSupported() {
   return typeof window !== "undefined" && typeof crypto !== "undefined" && Boolean(crypto.subtle) && typeof indexedDB !== "undefined";
 }
@@ -274,6 +285,7 @@ export async function unlockVault(profileId: string, pin: string) {
 
 export async function putVaultRecord<T>(key: CryptoKey, payload: VaultPayloadEnvelope<T>) {
   assertRuntimeSupported();
+  await assertKeyMatchesProfile(key, payload.profileId);
   if (!payload.profileId || !payload.recordId || !payload.domainId) throw new Error("Bản ghi Vault thiếu định danh.");
   const encrypted = await encryptBytes(key, payload.profileId, new TextEncoder().encode(JSON.stringify(payload)));
   await idbPut({
@@ -288,6 +300,7 @@ export async function putVaultRecord<T>(key: CryptoKey, payload: VaultPayloadEnv
 
 export async function getVaultRecord<T = unknown>(key: CryptoKey, profileId: string, recordId: string) {
   assertRuntimeSupported();
+  await assertKeyMatchesProfile(key, profileId);
   const record = await idbGet(profileId, recordId);
   if (!record) return null;
   return decryptStoredRecord<T>(key, profileId, record);
@@ -295,6 +308,7 @@ export async function getVaultRecord<T = unknown>(key: CryptoKey, profileId: str
 
 export async function listVaultRecords<T = unknown>(key: CryptoKey, profileId: string) {
   assertRuntimeSupported();
+  await assertKeyMatchesProfile(key, profileId);
   const records = await idbList(profileId);
   const output: VaultPayloadEnvelope<T>[] = [];
   for (const record of records) output.push(await decryptStoredRecord<T>(key, profileId, record));
