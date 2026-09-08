@@ -1,16 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import {
-  VAULT_AUTO_LOCK_MS,
-  VAULT_MIN_PIN_LENGTH,
-  countVaultRecords,
-  setupVault,
-  unlockVault,
-  vaultConfigured,
-  vaultRuntimeSupported,
-  type VaultStatus,
-} from "./health-secure-vault";
+import { useEffect, useState } from "react";
+import { VAULT_MIN_PIN_LENGTH, type VaultStatus } from "./health-secure-vault";
+import { useSecureVaultSession } from "./secure-vault-session";
 
 function statusLabel(status: VaultStatus) {
   if (status === "unlocked") return "Đang mở trong bộ nhớ phiên";
@@ -19,63 +11,29 @@ function statusLabel(status: VaultStatus) {
   return "Chưa cấu hình";
 }
 
-export default function SecureVaultCenter({ profileId }: { profileId: string }) {
-  const [status, setStatus] = useState<VaultStatus>("not-configured");
+export default function SecureVaultCenter() {
+  const { status, recordCount, lockReason, setup, unlock, lock } = useSecureVaultSession();
   const [pin, setPin] = useState("");
   const [confirmPin, setConfirmPin] = useState("");
-  const [vaultKey, setVaultKey] = useState<CryptoKey | null>(null);
-  const [recordCount, setRecordCount] = useState<number | null>(null);
   const [notice, setNotice] = useState("");
-  const lockTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setStatus(vaultRuntimeSupported() ? (vaultConfigured(profileId) ? "locked" : "not-configured") : "unsupported");
-      setVaultKey(null);
-      setRecordCount(null);
       setPin("");
       setConfirmPin("");
-      setNotice("");
+      if (lockReason === "idle") setNotice("Secure Vault đã tự khóa sau 10 phút không hoạt động.");
+      else if (lockReason === "pagehide") setNotice("Secure Vault đã khóa khi rời trang.");
+      else if (lockReason === "profile-change") setNotice("");
     }, 0);
     return () => window.clearTimeout(timer);
-  }, [profileId]);
-
-  useEffect(() => {
-    if (!vaultKey) return;
-    const arm = () => {
-      if (lockTimer.current !== null) window.clearTimeout(lockTimer.current);
-      lockTimer.current = window.setTimeout(() => {
-        setVaultKey(null);
-        setStatus("locked");
-        setRecordCount(null);
-        setPin("");
-        setConfirmPin("");
-        setNotice("Secure Vault đã tự khóa sau thời gian không hoạt động.");
-      }, VAULT_AUTO_LOCK_MS);
-    };
-    const activity = () => arm();
-    arm();
-    window.addEventListener("pointerdown", activity, { passive: true });
-    window.addEventListener("keydown", activity);
-    window.addEventListener("touchstart", activity, { passive: true });
-    return () => {
-      if (lockTimer.current !== null) window.clearTimeout(lockTimer.current);
-      lockTimer.current = null;
-      window.removeEventListener("pointerdown", activity);
-      window.removeEventListener("keydown", activity);
-      window.removeEventListener("touchstart", activity);
-    };
-  }, [vaultKey]);
+  }, [lockReason]);
 
   async function configure() {
     setNotice("");
     if (pin.length < VAULT_MIN_PIN_LENGTH) { setNotice(`Mã khóa cần ít nhất ${VAULT_MIN_PIN_LENGTH} ký tự.`); return; }
     if (pin !== confirmPin) { setNotice("Hai lần nhập mã khóa chưa khớp."); return; }
     try {
-      const key = await setupVault(profileId, pin);
-      setVaultKey(key);
-      setStatus("unlocked");
-      setRecordCount(0);
+      await setup(pin);
       setPin("");
       setConfirmPin("");
       setNotice("Secure Vault đã được tạo. Khóa giải mã chỉ đang nằm trong bộ nhớ phiên.");
@@ -84,27 +42,20 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
     }
   }
 
-  async function unlock() {
+  async function unlockNow() {
     setNotice("");
     try {
-      const key = await unlockVault(profileId, pin);
-      setVaultKey(key);
-      setStatus("unlocked");
+      await unlock(pin);
       setPin("");
-      setRecordCount(await countVaultRecords(key, profileId));
       setNotice("Đã mở Secure Vault cho hồ sơ đang chọn.");
     } catch (error) {
-      setVaultKey(null);
-      setStatus("locked");
-      setRecordCount(null);
+      setPin("");
       setNotice(error instanceof Error ? error.message : "Không thể mở Secure Vault.");
     }
   }
 
   function lockNow() {
-    setVaultKey(null);
-    setStatus("locked");
-    setRecordCount(null);
+    lock("manual");
     setPin("");
     setConfirmPin("");
     setNotice("Đã khóa Secure Vault. Khóa giải mã đã được bỏ khỏi state phiên.");
@@ -113,9 +64,9 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
   return <section className="vault-center" aria-label="Secure Health Vault">
     <header className="vault-head">
       <div>
-        <span className="hf-kicker">Secure Health Vault V1</span>
+        <span className="hf-kicker">Secure Health Vault V2 Session</span>
         <h3>Kho mã hóa cho dữ liệu rất nhạy cảm</h3>
-        <p>Vault dành cho các module sâu như tâm lý, dậy thì, chu kỳ, thuốc và tài liệu y tế khi chúng được triển khai.</p>
+        <p>Một phiên Vault dùng chung cho các module riêng tư của đúng hồ sơ đang chọn; đổi hồ sơ sẽ hủy tham chiếu khóa cũ.</p>
       </div>
       <div className={`vault-status status-${status}`} aria-live="polite"><span /> <strong>{statusLabel(status)}</strong></div>
     </header>
@@ -135,13 +86,13 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
     </div> : null}
 
     {status === "locked" ? <div className="vault-form compact">
-      <label><span>Mã khóa</span><input type="password" autoComplete="current-password" value={pin} onChange={(event) => setPin(event.target.value)} minLength={VAULT_MIN_PIN_LENGTH} maxLength={128} onKeyDown={(event) => { if (event.key === "Enter") void unlock(); }} /></label>
-      <button type="button" className="hf-primary vault-action" onClick={() => void unlock()}>Mở Vault</button>
+      <label><span>Mã khóa</span><input type="password" autoComplete="current-password" value={pin} onChange={(event) => setPin(event.target.value)} minLength={VAULT_MIN_PIN_LENGTH} maxLength={128} onKeyDown={(event) => { if (event.key === "Enter") void unlockNow(); }} /></label>
+      <button type="button" className="hf-primary vault-action" onClick={() => void unlockNow()}>Mở Vault</button>
     </div> : null}
 
     {status === "unlocked" ? <div className="vault-open-panel">
       <div><span>Bản ghi mã hóa</span><strong>{recordCount ?? "—"}</strong></div>
-      <div><span>Tự khóa</span><strong>10 phút không hoạt động</strong></div>
+      <div><span>Tự khóa</span><strong>10 phút không hoạt động · khóa khi rời trang</strong></div>
       <button type="button" className="hf-secondary vault-action" onClick={lockNow}>Khóa ngay</button>
     </div> : null}
 
@@ -149,9 +100,9 @@ export default function SecureVaultCenter({ profileId }: { profileId: string }) 
 
     <div className="vault-safety-grid">
       <article><strong>PIN không được lưu</strong><span>PIN chỉ dùng để dẫn xuất khóa; khóa giải mã chỉ giữ trong bộ nhớ khi Vault đang mở.</span></article>
-      <article><strong>Cô lập theo hồ sơ</strong><span>AES-GCM dùng dữ liệu xác thực gắn với profileId; ciphertext của hồ sơ này không được giải mã dưới định danh hồ sơ khác.</span></article>
+      <article><strong>Cô lập theo hồ sơ</strong><span>AES-GCM dùng dữ liệu xác thực gắn với profileId; đổi profile phá phiên khóa cũ.</span></article>
       <article><strong>Không gửi sang Admin</strong><span>Vault key, PIN và ciphertext không được đưa vào Control Plane.</span></article>
-      <article><strong>Không hứa khôi phục</strong><span>V1 chưa có recovery key. Quên mã khóa có thể khiến dữ liệu Vault không thể giải mã; chưa nên dùng cho hồ sơ duy nhất không có bản sao phù hợp.</span></article>
+      <article><strong>Không hứa khôi phục</strong><span>V1 chưa có recovery key. Quên mã khóa có thể khiến dữ liệu Vault không thể giải mã.</span></article>
     </div>
 
     <p className="vault-footnote">Mã hóa phía trình duyệt làm giảm rủi ro đọc trực tiếp dữ liệu lưu trữ, nhưng không được coi là bảo vệ tuyệt đối trước mã độc/XSS khi ứng dụng đang mở khóa.</p>
