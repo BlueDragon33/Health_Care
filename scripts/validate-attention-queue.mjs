@@ -20,22 +20,26 @@ for (const token of [
   'source: "data-quality"',
   "trends: []",
   "openEpisodes: []",
+  "profileId: string",
 ]) need(engine, token, "operational engine contract");
 
 if (engine.includes('priority: "urgent"')) throw new Error("Attention Queue V1 không được tự tạo urgent clinical signal");
 if (engine.includes("overallHealthScore") || engine.includes("healthScore")) throw new Error("Attention Queue không được tạo điểm sức khỏe tổng");
+if (engine.includes('LOCAL_PRIMARY_PROFILE_ID = "local-primary"')) throw new Error("Attention Queue không được hard-code một profileId toàn thiết bị sau Multi-profile V1");
 
 for (const token of [
   "Đây không phải điểm sức khỏe.",
   "Chưa kích hoạt cảnh báo y khoa tự động.",
   "Ngày trống hoặc ít dữ liệu không được hiểu là sức khỏe xấu.",
   "không sinh cảnh báo khẩn",
-]) need(queue, token, "safety copy");
+  "profileId: string",
+  "buildOperationalAttentionSnapshot(state, profileId)",
+]) need(queue, token, "safety/profile copy");
 
 need(framework, 'import AttentionQueue from "./attention-queue"', "framework import");
-need(framework, '<AttentionQueue state={state} onNavigate={(target) => setActive(target)} />', "Today integration");
+need(framework, 'profileId={activeProfileId}', "active-profile Today integration");
 need(page, 'import "./attention-queue.css"', "stylesheet integration");
 
 for (const token of ["box-shadow: inset", ":focus-visible", "@media (max-width: 520px)", "@media (prefers-reduced-motion: reduce)"]) need(styles, token, "3D/accessibility style");
 
-console.log("Attention Queue V1 PASS: max-5 operational due/data-gap items, no clinical urgency, no health score, responsive/accessibility integration present.");
+console.log("Attention Queue V1 PASS: max-5 profile-scoped due/data-gap items, no clinical urgency, no health score, responsive/accessibility integration present.");
