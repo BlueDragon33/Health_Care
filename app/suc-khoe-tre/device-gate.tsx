@@ -36,7 +36,7 @@ type AccessSession = {
   lastSeenAt?: string;
   expiresAt: number;
 };
-type Credential = { version: 1; privateKey: CryptoKey | null; publicKey: JsonWebKey };
+type Credential = { version: 1; privateKey: CryptoKey | null; publicKey: JsonWebKey; installationId: string };
 type ApiPayload = {
   device?: DeviceState;
   challenge?: string;
@@ -113,25 +113,55 @@ async function writeCredential(value: Credential) {
 
 async function credentialForDevice() {
   const current = await readCredential();
-  if (current?.version === 1 && current.publicKey && current.privateKey) return current;
+  if (current?.version === 1 && current.publicKey && current.privateKey) {
+    if (current.installationId) return current;
+    const upgraded = { ...current, installationId: crypto.randomUUID() } satisfies Credential;
+    await writeCredential(upgraded);
+    return upgraded;
+  }
   const pair = await crypto.subtle.generateKey({ name: "ECDSA", namedCurve: "P-256" }, true, ["sign", "verify"]) as CryptoKeyPair;
   const publicKey = await crypto.subtle.exportKey("jwk", pair.publicKey);
   const privateJwk = await crypto.subtle.exportKey("jwk", pair.privateKey);
   const privateKey = await crypto.subtle.importKey("jwk", privateJwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]);
-  const credential = { version: 1, privateKey, publicKey } satisfies Credential;
+  const credential = { version: 1, privateKey, publicKey, installationId: crypto.randomUUID() } satisfies Credential;
   await writeCredential(credential);
   return credential;
 }
 
-function deviceMetadata() {
-  const nav = navigator as Navigator & { userAgentData?: { mobile?: boolean; platform?: string } };
+async function deviceMetadata(installationId: string) {
+  const nav = navigator as Navigator & {
+    userAgentData?: {
+      mobile?: boolean;
+      platform?: string;
+      getHighEntropyValues?: (hints: string[]) => Promise<Record<string, unknown>>;
+    };
+    standalone?: boolean;
+  };
+  let highEntropy: Record<string, unknown> = {};
+  try {
+    highEntropy = await nav.userAgentData?.getHighEntropyValues?.(["platformVersion", "model", "architecture", "bitness"]) ?? {};
+  } catch {
+    highEntropy = {};
+  }
+  const pwaMode = window.matchMedia("(display-mode: standalone)").matches || nav.standalone === true;
   return {
+    installationId,
     userAgent: navigator.userAgent,
     platform: nav.userAgentData?.platform || navigator.platform || "",
+    platformVersion: typeof highEntropy.platformVersion === "string" ? highEntropy.platformVersion : "",
+    model: typeof highEntropy.model === "string" ? highEntropy.model : "",
+    architecture: typeof highEntropy.architecture === "string" ? highEntropy.architecture : "",
+    bitness: typeof highEntropy.bitness === "string" ? highEntropy.bitness : "",
     mobile: nav.userAgentData?.mobile === true,
     maxTouchPoints: navigator.maxTouchPoints || 0,
     screenWidth: window.screen.width,
     screenHeight: window.screen.height,
+    viewportWidth: window.innerWidth,
+    viewportHeight: window.innerHeight,
+    pixelRatio: window.devicePixelRatio || 1,
+    pwaMode,
+    language: navigator.language || "",
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "",
   };
 }
 
@@ -143,7 +173,7 @@ async function api(path: string, body: Record<string, unknown>) {
 }
 
 async function register(credential: Credential) {
-  const data = await api("/api/device", { action: "register", publicKey: credential.publicKey, metadata: deviceMetadata() });
+  const data = await api("/api/device", { action: "register", publicKey: credential.publicKey, metadata: await deviceMetadata(credential.installationId) });
   if (!data.device) throw new ApiError("Máy chủ chưa trả về trạng thái thiết bị.", data);
   return data;
 }

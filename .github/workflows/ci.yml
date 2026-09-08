@@ -40,6 +40,9 @@ jobs:
       - name: Validate 9–18 health framework
         run: npm run validate:framework
 
+      - name: Validate device auto-classification
+        run: npm run validate:device
+
       - name: Enforce repository separation
         shell: bash
         run: |

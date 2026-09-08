@@ -38,6 +38,7 @@ jobs:
         run: |
           npm run validate:growth
           npm run validate:framework
+          npm run validate:device
           npm run lint
           npm run build
 

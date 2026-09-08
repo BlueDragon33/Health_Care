@@ -18,9 +18,22 @@ type Row = {
   status: "pending" | "approved" | "blocked";
   device_type: "desktop" | "phone" | "tablet";
   platform: string | null;
+  os_name: string | null;
   browser: string | null;
+  browser_version: string | null;
+  installation_id: string | null;
   screen_width: number | null;
   screen_height: number | null;
+  viewport_width: number | null;
+  viewport_height: number | null;
+  touch_points: number;
+  mobile_hint: number;
+  pwa_mode: number;
+  language: string | null;
+  timezone: string | null;
+  classification_confidence: "high" | "medium" | "low";
+  classification_reason: string | null;
+  metadata_updated_at: string;
   label: string | null;
   edit_enabled: number;
   calendar_enabled: number;
@@ -46,9 +59,22 @@ function view(row: Row, policy: SiteAccessPolicy) {
     status: row.status,
     deviceType: row.device_type,
     platform: row.platform,
+    osName: row.os_name,
     browser: row.browser,
+    browserVersion: row.browser_version,
+    installationId: row.installation_id,
     screenWidth: row.screen_width,
     screenHeight: row.screen_height,
+    viewportWidth: row.viewport_width,
+    viewportHeight: row.viewport_height,
+    touchPoints: row.touch_points,
+    mobileHint: row.mobile_hint === 1,
+    pwaMode: row.pwa_mode === 1,
+    language: row.language,
+    timezone: row.timezone,
+    classificationConfidence: row.classification_confidence,
+    classificationReason: row.classification_reason,
+    metadataUpdatedAt: row.metadata_updated_at,
     label: row.label,
     editEnabled: row.edit_enabled === 1,
     calendarEnabled: row.calendar_enabled === 1,
@@ -65,9 +91,10 @@ function view(row: Row, policy: SiteAccessPolicy) {
 async function listDevices() {
   const [database, policy] = await Promise.all([getCourseDatabase(), getSiteAccessPolicy()]);
   const rows = await database.prepare(
-    `SELECT device_id, display_code, status, device_type, platform, browser, screen_width,
-            screen_height, label, edit_enabled, calendar_enabled, created_at, approved_at, blocked_at,
-            last_seen_at, last_activity_at
+    `SELECT device_id, display_code, status, device_type, platform, os_name, browser, browser_version,
+            installation_id, screen_width, screen_height, viewport_width, viewport_height, touch_points, mobile_hint,
+            pwa_mode, language, timezone, classification_confidence, classification_reason, metadata_updated_at,
+            label, edit_enabled, calendar_enabled, created_at, approved_at, blocked_at, last_seen_at, last_activity_at
        FROM site_access_devices
       ORDER BY CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
                last_seen_at DESC LIMIT 300`,
