@@ -30,6 +30,7 @@ import ReminderManager, { repeatLabels } from "./reminder-manager";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
+import PremiumHealthHeroArt from "./premium-health-hero-art";
 import PrivacyCenter from "./privacy-center";
 import SecureVaultCenter from "./secure-vault-center";
 import SecureVaultBackupCenter from "./secure-vault-backup-center";
@@ -369,7 +370,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
       </aside>
 
       <section className="hf-content">
-        <div className="hf-topbar"><div><span className="hf-kicker">Health Care · Vì một thế hệ khỏe mạnh hơn</span><h1>{state.profile.name ? `Xin chào, ${state.profile.name}!` : "Sức khỏe Y tế 9–18 tuổi"}</h1><small>{profileAge.stage?.label ? `${profileAge.stage.label} · Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.` : "Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai."}</small></div><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · thiết bị đã được quản trị` : "Đang chờ nội dung"}</div></div>
+        <div className="hf-topbar"><div><span className="hf-kicker">Health Care · Vì một thế hệ khỏe mạnh hơn</span><h1>{state.profile.name ? `Xin chào, ${state.profile.name}!` : "Sức khỏe Y tế 9–18 tuổi"}</h1><small>{profileAge.stage?.label ? `${profileAge.stage.label} · Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.` : "Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai."}</small></div><PremiumHealthHeroArt /><div className="hf-top-status"><span className="hf-dot" />{contentReady ? `${device.deviceCode} · thiết bị đã được quản trị` : "Đang chờ nội dung"}</div></div>
         {profileRegistry ? <ProfileSwitcher registry={profileRegistry} onSwitch={switchProfile} onCreate={createProfile} onDelete={removeProfile} /> : null}
         {dailySections.includes(active) ? <DayToolbar dayKey={dayKey} today={today} onChange={setDayKey} /> : null}
 
