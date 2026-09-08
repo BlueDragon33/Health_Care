@@ -45,6 +45,6 @@ export const HEALTH_PROFILE_RULES = {
   deviceAccessDoesNotGrantAllProfileVisibility: true,
 } as const;
 
-// Contract only. Local state hiện tại vẫn là single-profile baseline.
-// Khi migration sang multi-profile được triển khai phải giữ key cũ để rollback, tạo profileId cho dữ liệu hiện có,
-// kiểm thử không trộn dữ liệu giữa các con và không làm mất backup legacy.
+// Runtime Profile Registry V1 đã tách state theo profileId/storage key và giữ legacy key để rollback.
+// Các record bên trong HealthLocalState chưa được nhúng profileId riêng ở V1; isolation hiện được đảm bảo bởi profile-scoped state.
+// Khi nâng schema record-level phải thêm profileId mà không phá backup legacy và tiếp tục test chống trộn dữ liệu.

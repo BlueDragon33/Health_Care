@@ -2,7 +2,6 @@ import type { HealthLocalState, Reminder } from "./health-local-store";
 import { nextReminderOccurrence } from "./health-reminders";
 import type { HealthAttentionItem, HealthAttentionSnapshot, HealthDataGap, HealthDueItem } from "./health-attention-contracts";
 
-export const LOCAL_PRIMARY_PROFILE_ID = "local-primary";
 const MAX_PRIMARY_ITEMS = 5;
 const DUE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -20,14 +19,14 @@ function formatDue(date: Date) {
   return new Intl.DateTimeFormat("vi-VN", { dateStyle: "short", timeStyle: "short" }).format(date);
 }
 
-function reminderDueItems(state: HealthLocalState, now: Date): HealthDueItem[] {
+function reminderDueItems(state: HealthLocalState, profileId: string, now: Date): HealthDueItem[] {
   const deadline = now.getTime() + DUE_WINDOW_MS;
   return state.reminders.flatMap((reminder) => {
     const next = nextReminderOccurrence(reminder, now);
     if (!next || next.getTime() > deadline) return [];
     return [{
-      id: `due-${reminder.id}-${next.toISOString()}`,
-      profileId: LOCAL_PRIMARY_PROFILE_ID,
+      id: `due-${profileId}-${reminder.id}-${next.toISOString()}`,
+      profileId,
       domainId: reminderDomain[reminder.category],
       title: reminder.title,
       dueDate: next.toISOString(),
@@ -38,11 +37,11 @@ function reminderDueItems(state: HealthLocalState, now: Date): HealthDueItem[] {
   }).sort((a, b) => String(a.dueDate).localeCompare(String(b.dueDate)));
 }
 
-function completenessGaps(state: HealthLocalState): HealthDataGap[] {
+function completenessGaps(state: HealthLocalState, profileId: string): HealthDataGap[] {
   const gaps: HealthDataGap[] = [];
   if (!state.profile.name.trim()) gaps.push({
-    id: "gap-profile-name",
-    profileId: LOCAL_PRIMARY_PROFILE_ID,
+    id: `gap-${profileId}-profile-name`,
+    profileId,
     domainId: "records-appointments-documents",
     title: "Chưa đặt tên cho hồ sơ",
     reason: "missing-core-profile",
@@ -50,8 +49,8 @@ function completenessGaps(state: HealthLocalState): HealthDataGap[] {
     privacy: "standard",
   });
   if (!state.profile.birthDate) gaps.push({
-    id: "gap-profile-birth-date",
-    profileId: LOCAL_PRIMARY_PROFILE_ID,
+    id: `gap-${profileId}-profile-birth-date`,
+    profileId,
     domainId: "growth-development",
     title: "Thiếu ngày sinh để tính đúng tuổi theo tháng",
     reason: "missing-core-profile",
@@ -59,8 +58,8 @@ function completenessGaps(state: HealthLocalState): HealthDataGap[] {
     privacy: "sensitive",
   });
   if (!state.profile.sex) gaps.push({
-    id: "gap-profile-growth-sex",
-    profileId: LOCAL_PRIMARY_PROFILE_ID,
+    id: `gap-${profileId}-profile-growth-sex`,
+    profileId,
     domainId: "growth-development",
     title: "Chưa chọn giới tính dùng cho tham chiếu tăng trưởng WHO",
     reason: "missing-core-profile",
@@ -68,8 +67,8 @@ function completenessGaps(state: HealthLocalState): HealthDataGap[] {
     privacy: "sensitive",
   });
   if (!state.growth.length) gaps.push({
-    id: "gap-growth-baseline",
-    profileId: LOCAL_PRIMARY_PROFILE_ID,
+    id: `gap-${profileId}-growth-baseline`,
+    profileId,
     domainId: "growth-development",
     title: "Chưa có mốc chiều cao/cân nặng ban đầu",
     reason: "other",
@@ -109,9 +108,9 @@ function gapToAttention(item: HealthDataGap): HealthAttentionItem {
   };
 }
 
-export function buildOperationalAttentionSnapshot(state: HealthLocalState, now = new Date()): HealthAttentionSnapshot {
-  const due = reminderDueItems(state, now);
-  const dataGaps = completenessGaps(state);
+export function buildOperationalAttentionSnapshot(state: HealthLocalState, profileId: string, now = new Date()): HealthAttentionSnapshot {
+  const due = reminderDueItems(state, profileId, now);
+  const dataGaps = completenessGaps(state, profileId);
   const attention = [...due.map(dueToAttention), ...dataGaps.map(gapToAttention)].slice(0, MAX_PRIMARY_ITEMS);
   return {
     generatedAt: now.toISOString(),

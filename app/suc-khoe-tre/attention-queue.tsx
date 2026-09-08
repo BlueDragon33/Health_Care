@@ -19,12 +19,14 @@ function priorityLabel(priority: "info" | "due" | "review" | "urgent") {
 
 export default function AttentionQueue({
   state,
+  profileId,
   onNavigate,
 }: {
   state: HealthLocalState;
+  profileId: string;
   onNavigate: (target: AttentionNavigationTarget) => void;
 }) {
-  const snapshot = useMemo(() => buildOperationalAttentionSnapshot(state), [state]);
+  const snapshot = useMemo(() => buildOperationalAttentionSnapshot(state, profileId), [state, profileId]);
   const completeness = useMemo(() => operationalCompleteness(state), [state]);
   const dueCount = snapshot.due.length;
   const gapCount = snapshot.dataGaps.length;
