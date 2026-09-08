@@ -24,7 +24,9 @@ ALTER TABLE `site_access_devices` ADD COLUMN `classification_confidence` text DE
 --> statement-breakpoint
 ALTER TABLE `site_access_devices` ADD COLUMN `classification_reason` text;
 --> statement-breakpoint
-ALTER TABLE `site_access_devices` ADD COLUMN `metadata_updated_at` text DEFAULT CURRENT_TIMESTAMP NOT NULL;
+ALTER TABLE `site_access_devices` ADD COLUMN `metadata_updated_at` text;
+--> statement-breakpoint
+UPDATE `site_access_devices` SET `metadata_updated_at` = CURRENT_TIMESTAMP WHERE `metadata_updated_at` IS NULL;
 --> statement-breakpoint
 CREATE INDEX `site_access_devices_installation_idx` ON `site_access_devices` (`installation_id`);
 --> statement-breakpoint
