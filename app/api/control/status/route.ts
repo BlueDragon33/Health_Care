@@ -1,4 +1,4 @@
-import { controlPreflight, controlResponse, requireControlService, withControlCors } from "../../../control-auth.server";
+import { controlPreflight, controlResponse, getControlSecretScope, requireControlService, withControlCors } from "../../../control-auth.server";
 import { deviceErrorResponse, getHealthControlStatus } from "../../../device-auth.server";
 
 export const dynamic = "force-dynamic";
@@ -18,8 +18,17 @@ async function buildIdentity() {
 export async function GET(request: Request) {
   try {
     await requireControlService(request);
-    const [status, build] = await Promise.all([getHealthControlStatus(), buildIdentity()]);
-    return controlResponse({ ...status, ...build }, 200, request);
+    const [status, build, secretScope] = await Promise.all([
+      getHealthControlStatus(),
+      buildIdentity(),
+      getControlSecretScope(),
+    ]);
+    return controlResponse({
+      ...status,
+      ...build,
+      capabilities: [...status.capabilities, "app-scoped-secret-v1"] as const,
+      controlAuth: { secretScope },
+    }, 200, request);
   } catch (error) {
     return withControlCors(request, deviceErrorResponse(error));
   }
