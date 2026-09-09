@@ -13,6 +13,7 @@ import "./secure-vault-backup-center.css";
 import "./medications-allergies.css";
 import "./vital-signs-screening.css";
 import "./chronic-conditions-care-plans.css";
+import "./injury-sports-musculoskeletal.css";
 import "./preventive-care-records.css";
 import "./private-sensitive-notes.css";
 import "./control-plane.css";

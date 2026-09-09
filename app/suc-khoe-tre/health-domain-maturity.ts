@@ -41,10 +41,10 @@ export const HEALTH_DOMAIN_IMPLEMENTATION = {
     evidence: ["health-framework.tsx", "weekly-health-summary.tsx"],
   },
   "injury-sports-musculoskeletal": {
-    maturity: "framework",
-    label: "Đã khóa khung",
-    note: "Đã có record contract và guardrail; chưa có màn hình episode chấn thương/return-to-activity chuyên biệt.",
-    evidence: ["health-record-contracts.ts", "health-domain-catalog.ts"],
+    maturity: "operational",
+    label: "Đang vận hành",
+    note: "Đã có episode chấn thương trong Secure Vault: tạo/cập nhật/kết thúc, provenance, theo dõi đi khám và return-to-activity có guardrail riêng cho va đập đầu.",
+    evidence: ["injury-sports-musculoskeletal.tsx", "health-framework.tsx", "health-domain-catalog.ts"],
   },
   "sleep-recovery": {
     maturity: "operational",
