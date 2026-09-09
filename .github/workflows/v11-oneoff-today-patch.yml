@@ -1,0 +1,77 @@
+name: V11 one-off Today life-stage runtime patch
+
+on:
+  push:
+    branches:
+      - feature/today-life-stage-v11
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v11-oneoff-today-runtime
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/today-life-stage-v11
+          fetch-depth: 0
+
+      - name: Guarded patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/suc-khoe-tre/health-framework.tsx')
+          text = path.read_text()
+          replacements = [
+              ('import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel";',
+               'import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel";\nimport { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";', 1),
+              ('const todayTasks: { key: TaskKey; label: string; group: string }[] = [\n  { key: "breakfast", label: "Ăn sáng", group: "Dinh dưỡng" },\n  { key: "water", label: "Theo dõi nước uống", group: "Dinh dưỡng" },\n  { key: "movement", label: "Có vận động trong ngày", group: "Vận động" },\n  { key: "teethMorning", label: "Đánh răng buổi sáng", group: "Chăm sóc" },\n  { key: "teethEvening", label: "Đánh răng buổi tối", group: "Chăm sóc" },\n  { key: "sleep", label: "Chuẩn bị ngủ đúng kế hoạch", group: "Giấc ngủ" },\n];\n\n',
+               '', 1),
+              ('  const today = todayKey();\n  const day = currentDay(state, dayKey);\n  const completed = todayTasks.filter((task) => day.tasks[task.key]).length;\n  const progress = Math.round((completed / todayTasks.length) * 100);\n  const contentReady = initialCourse !== null && initialCourse !== undefined;\n  const growth = useMemo(() => [...state.growth].sort((a, b) => b.date.localeCompare(a.date)), [state.growth]);\n  const latestGrowth = growth[0] ?? null;\n  const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);\n  const activityOptions = useMemo(() => activityOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);',
+               '  const today = todayKey();\n  const day = currentDay(state, dayKey);\n  const contentReady = initialCourse !== null && initialCourse !== undefined;\n  const growth = useMemo(() => [...state.growth].sort((a, b) => b.date.localeCompare(a.date)), [state.growth]);\n  const latestGrowth = growth[0] ?? null;\n  const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);\n  const todayRoutine = useMemo(() => todayRoutineForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);\n  const completed = todayRoutine.tasks.filter((task) => day.tasks[task.key]).length;\n  const progress = Math.round((completed / todayRoutine.tasks.length) * 100);\n  const activityOptions = useMemo(() => activityOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);', 1),
+              ('<SectionHeader title={dayKey === today ? "Hôm nay" : "Ngày đã chọn"} description="Checklist, tiến độ và nhắc việc được giữ liên tục khi trẻ lớn dần; nội dung chuyên môn sẽ thay đổi theo giai đoạn tuổi." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />',
+               '<SectionHeader title={dayKey === today ? todayRoutine.title : "Ngày đã chọn"} description="Checklist và cách diễn giải tiến độ tự đổi theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi; dữ liệu cũ vẫn dùng cùng schema cục bộ để không mất lịch sử." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />', 1),
+              ('<article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>',
+               '<article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayRoutine.tasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>{todayRoutine.progressSummary}</p></article>', 1),
+              ('<section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayTasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div></section>',
+               '<section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist theo tuổi</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayRoutine.tasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div><p className="hf-muted">{todayRoutine.note}</p></section>', 1),
+              ('<article className="hf-quick-card"><span>Dinh dưỡng</span><strong>{day.foodGroups.length}/{foodGroups.length} nhóm · {day.waterCups} cốc nước</strong><small>{day.meals.length} bản ghi bữa ăn ngày đã chọn.</small><button type="button" onClick={() => setActive("nutrition")}>Mở dinh dưỡng</button></article>',
+               '<article className="hf-quick-card"><span>Dinh dưỡng</span><strong>{todayNutritionMetric(profileAge.lifeStage, day, foodGroups.length)}</strong><small>{profileAge.lifeStage?.id === "infant-9-11m" ? "Bản ghi chỉ để nhìn xu hướng ăn bổ sung; không suy ra trẻ đã ăn đủ." : `${day.meals.length} bản ghi bữa ăn ngày đã chọn.`}</small><button type="button" onClick={() => setActive("nutrition")}>Mở dinh dưỡng</button></article>', 1),
+              ('<section className="hf-panel hf-week-panel"><div className="hf-panel-head"><div><span className="hf-kicker">7 ngày</span><h3>Nhìn nhanh thói quen</h3></div><small>Kết thúc tại {formatDate(dayKey)}</small></div><div className="hf-week-strip">{historyKeys.map((key) => { const record = currentDay(state, key); const done = todayTasks.filter((task) => record.tasks[task.key]).length; const minutes = record.activities.reduce((sum, item) => sum + item.minutes, 0); return <button type="button" key={key} className={key === dayKey ? "is-selected" : ""} onClick={() => setDayKey(key)}><span>{formatWeekday(key)}</span><strong>{done}/{todayTasks.length}</strong><small>{record.waterCups} cốc · {minutes} phút</small></button>; })}</div></section>',
+               '<section className="hf-panel hf-week-panel"><div className="hf-panel-head"><div><span className="hf-kicker">7 ngày</span><h3>Nhìn nhanh thói quen theo tuổi</h3></div><small>Kết thúc tại {formatDate(dayKey)}</small></div><div className="hf-week-strip">{historyKeys.map((key) => { const record = currentDay(state, key); const done = todayRoutine.tasks.filter((task) => record.tasks[task.key]).length; return <button type="button" key={key} className={key === dayKey ? "is-selected" : ""} onClick={() => setDayKey(key)}><span>{formatWeekday(key)}</span><strong>{done}/{todayRoutine.tasks.length}</strong><small>{todayWeekMetric(profileAge.lifeStage, record)}</small></button>; })}</div></section>', 1),
+          ]
+
+          changed = False
+          for old, new, expected in replacements:
+              count = text.count(old)
+              if count == 0 and new in text:
+                  continue
+              if count != expected:
+                  raise SystemExit(f'Guard failed: expected {expected}, found {count}: {old[:140]}')
+              text = text.replace(old, new)
+              changed = True
+
+          if changed:
+              path.write_text(text)
+          PY
+
+      - name: Run V11 validator
+        run: node scripts/validate-today-life-stage.mjs
+
+      - name: Commit exact runtime patch when needed
+        run: |
+          if git diff --quiet -- app/suc-khoe-tre/health-framework.tsx; then
+            echo "Runtime already patched."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx
+          git commit -m "Use life-stage Today dashboard routines"
+          git push origin HEAD:feature/today-life-stage-v11
