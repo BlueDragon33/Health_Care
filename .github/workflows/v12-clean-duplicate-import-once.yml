@@ -1,0 +1,47 @@
+name: V12 clean duplicate Journal import once
+
+on:
+  push:
+    branches:
+      - feature/journal-life-stage-v12
+
+permissions:
+  contents: write
+
+jobs:
+  clean:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/journal-life-stage-v12
+          fetch-depth: 0
+      - name: Normalize Journal import and self-remove workflow
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          framework = Path('app/suc-khoe-tre/health-framework.tsx')
+          text = framework.read_text()
+          line = 'import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";'
+          count = text.count(line)
+          if count < 1:
+              raise SystemExit('Journal import missing')
+          while text.count(line) > 1:
+              first = text.find(line)
+              next_pos = text.find(line, first + len(line))
+              start = next_pos
+              end = next_pos + len(line)
+              if end < len(text) and text[end] == '\n':
+                  end += 1
+              text = text[:start] + text[end:]
+          if text.count(line) != 1:
+              raise SystemExit('Journal import normalization failed')
+          framework.write_text(text)
+          PY
+          rm .github/workflows/v12-clean-duplicate-import-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx .github/workflows/v12-clean-duplicate-import-once.yml
+          git commit -m "Remove duplicate Journal runtime imports"
+          git push origin HEAD:feature/journal-life-stage-v12
