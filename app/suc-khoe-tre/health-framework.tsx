@@ -210,10 +210,6 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);
   const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
-  const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
-  const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
-  const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
-  const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const todayRoutine = useMemo(() => todayRoutineForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const completed = todayRoutine.tasks.filter((task) => day.tasks[task.key]).length;
   const progress = Math.round((completed / todayRoutine.tasks.length) * 100);
@@ -444,8 +440,6 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
         {active === "journal" ? <section className="hf-section">
           <SectionHeader title="Nhật ký" description="Ghi cảm nhận và triệu chứng theo thời gian. Đây không phải công cụ tự chẩn đoán hoặc tự kê đơn." aside={formatDate(dayKey)} />
-          <JournalStagePanel stage={profileAge.lifeStage} />
-          <JournalStagePanel stage={profileAge.lifeStage} />
           <JournalStagePanel stage={profileAge.lifeStage} />
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Cảm nhận / tình trạng chung</span><h3>{journalConfig.feelingPrompt}</h3></div></div><div className="hf-choice-row">{([['good','Khỏe'],['normal','Bình thường'],['unwell','Không khỏe']] as const).map(([value, label]) => <button type="button" key={value} className={day.feeling === value ? "hf-choice is-active" : "hf-choice"} onClick={() => updateDay((current) => ({ ...current, feeling: value }))}>{label}</button>)}</div></section>
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Triệu chứng</span><h3>Ghi nhanh</h3></div></div><div className="hf-chip-grid">{journalObservations.map((item) => <button type="button" key={item} className={day.symptoms.includes(item) ? "hf-chip is-active" : "hf-chip"} onClick={() => updateDay((current) => ({ ...current, symptoms: current.symptoms.includes(item) ? current.symptoms.filter((value) => value !== item) : [...current.symptoms, item] }))}>{item}</button>)}</div><label className="hf-textarea-label">Ghi chú<textarea value={day.journalNote} maxLength={1200} onChange={(event) => updateDay((current) => ({ ...current, journalNote: event.target.value }))} placeholder="Diễn biến, thời điểm xuất hiện hoặc điều cần nhớ…" /></label><div className="hf-safety-note"><strong>Khi có dấu hiệu nghiêm trọng hoặc tình trạng xấu đi rõ rệt:</strong> không dựa vào nhật ký để tự xử trí; cần liên hệ cơ sở y tế phù hợp.</div></section>
