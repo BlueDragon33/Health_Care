@@ -28,6 +28,7 @@ import WeeklyHealthSummary from "./weekly-health-summary";
 import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
 import NutritionStagePanel from "./nutrition-stage-panel";
+import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
@@ -84,7 +85,6 @@ const todayTasks: { key: TaskKey; label: string; group: string }[] = [
 ];
 
 const foodGroups = ["Đạm", "Rau", "Trái cây", "Sữa / tương đương", "Ngũ cốc / tinh bột", "Nước"];
-const activityTypes = ["Đi bộ", "Chạy", "Đạp xe", "Bơi", "Bóng đá", "Nhảy dây", "Thể dục", "Khác"];
 const symptoms = ["Đau đầu", "Đau bụng", "Ho", "Sổ mũi", "Đau họng", "Sốt", "Mệt", "Khác"];
 const categoryLabels: Record<Reminder["category"], string> = { nutrition: "Dinh dưỡng", water: "Nước", activity: "Vận động", care: "Chăm sóc", growth: "Đo tăng trưởng", appointment: "Lịch khám", other: "Khác" };
 
@@ -162,7 +162,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const [weightKg, setWeightKg] = useState("");
   const [mealType, setMealType] = useState<MealEntry["meal"]>("breakfast");
   const [mealText, setMealText] = useState("");
-  const [activityType, setActivityType] = useState(activityTypes[0]);
+  const [activityType, setActivityType] = useState("Khác");
   const [activityMinutes, setActivityMinutes] = useState("30");
 
   useEffect(() => {
@@ -218,6 +218,8 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const growth = useMemo(() => [...state.growth].sort((a, b) => b.date.localeCompare(a.date)), [state.growth]);
   const latestGrowth = growth[0] ?? null;
   const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);
+  const activityOptions = useMemo(() => activityOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
+  const selectedActivityType = activityOptions.includes(activityType) ? activityType : activityOptions[0];
   const latestAssessment = useMemo(() => latestGrowth ? assessWhoBmiForAge({ birthDate: state.profile.birthDate, measurementDate: latestGrowth.date, sex: state.profile.sex, heightCm: latestGrowth.heightCm, weightKg: latestGrowth.weightKg }) : null, [latestGrowth, state.profile.birthDate, state.profile.sex]);
   const historyKeys = useMemo(() => recentDateKeys(7, dayKey), [dayKey]);
   const nextReminder = useMemo(() => {
@@ -320,7 +322,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   function addActivity() {
     const minutes = Math.round(Number(activityMinutes));
     if (!(minutes > 0 && minutes <= 600)) return;
-    const entry: ActivityEntry = { id: uid("activity"), type: activityType, minutes, createdAt: new Date().toISOString() };
+    const entry: ActivityEntry = { id: uid("activity"), type: selectedActivityType, minutes, createdAt: new Date().toISOString() };
     updateDay((current) => ({ ...current, activities: [...current.activities, entry].slice(-100), tasks: { ...current.tasks, movement: true } }));
   }
 
@@ -420,20 +422,22 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         </section> : null}
 
         {active === "activity" ? <section className="hf-section">
-          <SectionHeader title="Vận động" description="Ghi loại hoạt động và số phút trong ngày để theo dõi thói quen xuyên suốt 9–18 tuổi." aside={formatDate(dayKey)} />
+          <SectionHeader title="Vận động" description="Loại hoạt động và cách ghi được đổi theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi; số phút dùng để nhìn xu hướng, không phải điểm thể lực." aside={formatDate(dayKey)} />
           <StagePanel stage={profileAge.lifeStage} />
-          <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hoạt động trong ngày</span><h3>Thêm vận động</h3></div><strong className="hf-big-number">{day.activities.reduce((sum, item) => sum + item.minutes, 0)} phút</strong></div><div className="hf-inline-form"><select value={activityType} onChange={(event) => setActivityType(event.target.value)}>{activityTypes.map((item) => <option key={item}>{item}</option>)}</select><input inputMode="numeric" value={activityMinutes} onChange={(event) => setActivityMinutes(event.target.value)} placeholder="Số phút" /><button type="button" className="hf-primary" onClick={addActivity}>Thêm</button></div>{day.activities.length ? <div className="hf-entry-list">{[...day.activities].reverse().map((entry) => <article key={entry.id}><span>{entry.minutes} phút</span><strong>{entry.type}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, activities: current.activities.filter((item) => item.id !== entry.id) }))}>Xóa</button></article>)}</div> : <Empty>Chưa có hoạt động cho ngày này.</Empty>}</section>
+          <ActivityStagePanel stage={profileAge.lifeStage} />
+          <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hoạt động trong ngày</span><h3>Thêm vận động</h3></div><strong className="hf-big-number">{day.activities.reduce((sum, item) => sum + item.minutes, 0)} phút</strong></div><div className="hf-inline-form"><select value={selectedActivityType} onChange={(event) => setActivityType(event.target.value)}>{activityOptions.map((item) => <option key={item}>{item}</option>)}</select><input inputMode="numeric" value={activityMinutes} onChange={(event) => setActivityMinutes(event.target.value)} placeholder="Số phút" /><button type="button" className="hf-primary" onClick={addActivity}>Thêm</button></div>{day.activities.length ? <div className="hf-entry-list">{[...day.activities].reverse().map((entry) => <article key={entry.id}><span>{entry.minutes} phút</span><strong>{entry.type}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, activities: current.activities.filter((item) => item.id !== entry.id) }))}>Xóa</button></article>)}</div> : <Empty>Chưa có hoạt động cho ngày này.</Empty>}</section>
           <section className="hf-panel hf-info-panel"><span className="hf-kicker">Đúng phạm vi 9–18</span><h3>Theo dõi sức khỏe, không phải app gym</h3><p>Ứng dụng ưu tiên tăng trưởng, thể lực và thói quen. Không tự đặt mục tiêu giảm cân, siết cân hoặc hình thể người lớn cho trẻ/vị thành niên.</p></section>
           <WeeklyHealthSummary state={state} endDate={dayKey} mode="activity" />
         </section> : null}
 
         {active === "care" ? <section className="hf-section">
-          <SectionHeader title="Chăm sóc" description="Giấc ngủ, răng miệng, mắt & học tập và vệ sinh cá nhân; lớp nội dung sẽ thay đổi dần đến giai đoạn tự quản lý sức khỏe trước đại học." aside={formatDate(dayKey)} />
+          <SectionHeader title="Chăm sóc" description="Giấc ngủ, răng miệng, an toàn, màn hình/học tập và tự chăm sóc được tổ chức theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi." aside={formatDate(dayKey)} />
           <StagePanel stage={profileAge.lifeStage} />
+          <CareStagePanel stage={profileAge.lifeStage} />
           <div className="hf-module-grid">
             <article className="hf-module-card"><span className="hf-kicker">Giấc ngủ</span><h3>Giờ ngủ & thức dậy</h3><div className="hf-form-grid two"><label>Đi ngủ<input type="time" value={day.sleepStart} onChange={(event) => updateDay((current) => ({ ...current, sleepStart: event.target.value }))} /></label><label>Thức dậy<input type="time" value={day.sleepEnd} onChange={(event) => updateDay((current) => ({ ...current, sleepEnd: event.target.value, tasks: { ...current.tasks, sleep: Boolean(event.target.value) } }))} /></label></div><strong className="hf-card-value">{sleepDuration(day.sleepStart, day.sleepEnd)?.toFixed(1) ?? "—"} giờ</strong><small>Thời lượng được tính từ giờ nhập; đánh giá mục tiêu ngủ theo tuổi sẽ dùng nguồn hướng dẫn riêng.</small></article>
             <article className="hf-module-card"><span className="hf-kicker">Răng miệng</span><h3>Checklist đánh răng</h3><label className="hf-switch-row"><input type="checkbox" checked={day.tasks.teethMorning} onChange={() => toggleTask("teethMorning")} /><span>Sáng</span></label><label className="hf-switch-row"><input type="checkbox" checked={day.tasks.teethEvening} onChange={() => toggleTask("teethEvening")} /><span>Tối</span></label><small>Lịch nha khoa có thể tạo ở mục Nhắc việc.</small></article>
-            <article className="hf-module-card"><span className="hf-kicker">Mắt & học tập</span><h3>Lần nghỉ mắt đã ghi</h3><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.max(0, current.eyeBreaks - 1) }))}>−</button><strong>{day.eyeBreaks}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.min(100, current.eyeBreaks + 1) }))}>+</button></div><small>Chỉ ghi thói quen; không tự chẩn đoán mỏi mắt hoặc tật khúc xạ.</small></article>
+            {shouldShowEyeBreakTracker(profileAge.lifeStage) ? <article className="hf-module-card"><span className="hf-kicker">Mắt & học tập</span><h3>Lần nghỉ mắt đã ghi</h3><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.max(0, current.eyeBreaks - 1) }))}>−</button><strong>{day.eyeBreaks}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, eyeBreaks: Math.min(100, current.eyeBreaks + 1) }))}>+</button></div><small>Chỉ ghi thói quen; không tự chẩn đoán mỏi mắt hoặc tật khúc xạ.</small></article> : <article className="hf-module-card"><span className="hf-kicker">Màn hình & tương tác</span><h3>Không dùng bộ đếm nghỉ mắt cho trẻ nhỏ</h3><small>Nhóm dưới 6 tuổi dùng hướng dẫn theo giai đoạn ở trên; bộ đếm nghỉ mắt kiểu học đường chỉ xuất hiện từ 6 tuổi.</small></article>}
             <article className="hf-module-card"><span className="hf-kicker">Vệ sinh & tự chăm sóc</span><h3>Checklist trong ngày</h3><label className="hf-switch-row"><input type="checkbox" checked={day.hygieneDone} onChange={() => updateDay((current) => ({ ...current, hygieneDone: !current.hygieneDone }))} /><span>Đã hoàn thành vệ sinh / tự chăm sóc</span></label><small>Ở nhóm 16–18 tuổi, module này sẽ phát triển dần sang tự quản lý lịch khám, hồ sơ và thuốc theo chỉ định.</small></article>
           </div>
           <WeeklyHealthSummary state={state} endDate={dayKey} mode="care" />
