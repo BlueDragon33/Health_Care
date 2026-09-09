@@ -1,5 +1,5 @@
 import { verifyControlWebLaunchTicket } from "../../control-auth.server";
-import { consumeHealthControlWebLaunch } from "../../control-web-launch.server";
+import { consumeHealthControlWebLaunch, promoteHealthControlWebLaunchDevice } from "../../control-web-launch.server";
 import {
   auditHealthControlEvent,
   createSiteDeviceChallenge,
@@ -27,12 +27,16 @@ export async function POST(request: Request) {
       const suppliedLaunch = typeof payload.controlLaunchTicket === "string" ? payload.controlLaunchTicket.trim() : "";
       const controlLaunch = suppliedLaunch ? await verifyControlWebLaunchTicket(suppliedLaunch) : null;
       if (controlLaunch) await consumeHealthControlWebLaunch(controlLaunch);
-      const device = await registerSiteDevice(
+      let device = await registerSiteDevice(
         payload.publicKey,
         payload.metadata,
         previewRequest || automation.autoApproveDevices || Boolean(controlLaunch),
       );
       if (controlLaunch) {
+        await promoteHealthControlWebLaunchDevice(device.deviceId, controlLaunch);
+        if (device.status !== "approved") {
+          device = await registerSiteDevice(payload.publicKey, payload.metadata, false);
+        }
         await auditHealthControlEvent(controlLaunch.actor, "site_device_control_web_launch_approved", device.deviceId, {
           deviceCode: device.deviceCode,
           role: controlLaunch.role,
