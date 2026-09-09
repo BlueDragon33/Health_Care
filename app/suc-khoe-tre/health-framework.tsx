@@ -32,6 +32,7 @@ import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, should
 import { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";
 import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
 import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
+import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
@@ -209,6 +210,8 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
   const growth = useMemo(() => [...state.growth].sort((a, b) => b.date.localeCompare(a.date)), [state.growth]);
   const latestGrowth = growth[0] ?? null;
   const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);
+  const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
+  const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
@@ -443,6 +446,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
         {active === "journal" ? <section className="hf-section">
           <SectionHeader title="Nhật ký" description="Ghi cảm nhận và triệu chứng theo thời gian. Đây không phải công cụ tự chẩn đoán hoặc tự kê đơn." aside={formatDate(dayKey)} />
+          <JournalStagePanel stage={profileAge.lifeStage} />
           <JournalStagePanel stage={profileAge.lifeStage} />
           <JournalStagePanel stage={profileAge.lifeStage} />
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Cảm nhận / tình trạng chung</span><h3>{journalConfig.feelingPrompt}</h3></div></div><div className="hf-choice-row">{([['good','Khỏe'],['normal','Bình thường'],['unwell','Không khỏe']] as const).map(([value, label]) => <button type="button" key={value} className={day.feeling === value ? "hf-choice is-active" : "hf-choice"} onClick={() => updateDay((current) => ({ ...current, feeling: value }))}>{label}</button>)}</div></section>
