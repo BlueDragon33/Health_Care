@@ -41,7 +41,15 @@ for (const token of [
   "aria-pressed={selected}",
   "window.confirm",
   "Hành động không ảnh hưởng hồ sơ khác",
-]) need(switcher, token, "switch/delete safety UI");
+  "if (months < 24) return `${months} tháng`",
+  "const age = ageLabel(profile)",
+  "<small>{age}</small>",
+  'aria-label={`${profile.displayName} · ${age}${selected ? " · đang theo dõi" : ""}`}',
+]) need(switcher, token, "switch/delete/age visibility safety UI");
+
+if (switcher.includes('selected ? ageLabel(profile) : "Chạm để chuyển hồ sơ"')) {
+  throw new Error("Mọi profile card phải hiển thị tuổi thật; không được thay tuổi bằng copy điều hướng ở hồ sơ chưa chọn");
+}
 
 for (const token of [
   'import ProfileSwitcher from "./profile-switcher"',
@@ -66,4 +74,4 @@ need(framework, "setProfileRegistry(syncRegistryIdentity(profileRegistry, active
 need(page, 'import "./profile-switcher.css"', "profile switcher stylesheet");
 for (const token of ["box-shadow: inset", ":focus-visible", "@media (max-width: 620px)", "@media (prefers-reduced-motion: reduce)"]) need(styles, token, "3D/accessibility style");
 
-console.log("Profile Registry V1 PASS: legacy-preserving migration, per-profile state keys, switch/create/delete isolation, profile-scoped backup and attention identity are wired.");
+console.log("Profile Registry V1/V7 PASS: per-profile isolation is preserved and every profile card exposes exact age, including month-age below 24 months.");
