@@ -39,6 +39,7 @@ import { SecureVaultSessionProvider } from "./secure-vault-session";
 import MedicationsAllergies from "./medications-allergies";
 import VitalSignsScreening from "./vital-signs-screening";
 import ChronicConditionsCarePlans from "./chronic-conditions-care-plans";
+import InjurySportsMusculoskeletal from "./injury-sports-musculoskeletal";
 import PreventiveCareRecords from "./preventive-care-records";
 import PrivateSensitiveNotes from "./private-sensitive-notes";
 import type { HealthProfileRegistry } from "./health-profile-contracts";
@@ -458,6 +459,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
             <MedicationsAllergies />
             <VitalSignsScreening />
             <ChronicConditionsCarePlans />
+            <InjurySportsMusculoskeletal />
             <PreventiveCareRecords />
             <PrivateSensitiveNotes />
           </SecureVaultSessionProvider> : null}
