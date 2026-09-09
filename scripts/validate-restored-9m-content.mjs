@@ -8,6 +8,7 @@ const styles = fs.readFileSync("app/suc-khoe-tre/age-content-center.css", "utf8"
 const stageStyles = fs.readFileSync("app/suc-khoe-tre/stage-health-guide.css", "utf8");
 const evidence = fs.readFileSync("app/suc-khoe-tre/health-evidence.ts", "utf8");
 const client = fs.readFileSync("app/suc-khoe-tre/health-client.tsx", "utf8");
+const todayDashboard = fs.readFileSync("app/suc-khoe-tre/attention-queue.tsx", "utf8");
 const page = fs.readFileSync("app/suc-khoe-tre/page.tsx", "utf8");
 const manifest = fs.readFileSync("public/manifest.webmanifest", "utf8");
 const layout = fs.readFileSync("app/layout.tsx", "utf8");
@@ -129,11 +130,16 @@ for (const token of [
   'cdcChokingPrevention',
 ]) need(evidence, token, "evidence registry 9m–18y");
 
-need(client, 'import AgeContentCenter from "./age-content-center"', "runtime integration");
-need(client, '<AgeContentCenter />', "runtime rendering");
+/* AgeContentCenter used to render above the entire app. V5 intentionally nests it in the Today dashboard so the first screen matches the product dashboard while preserving runtime access to all age content. */
+need(client, '<HealthFramework initialCourse={initialCourse} device={device} />', "canonical Health runtime");
+need(todayDashboard, 'import AgeContentCenter from "./age-content-center"', "age content runtime integration");
+need(todayDashboard, '<AgeContentCenter ageMonths={age.months} sex={state.profile.sex} />', "age content runtime rendering");
+need(todayDashboard, 'Từ 9 tháng đến hết 18 tuổi', "visible 9-month product scope");
+need(todayDashboard, '9–11 tháng', "visible infant stage");
 need(page, 'import "./age-content-center.css"', "stylesheet integration");
 need(page, 'import "./stage-health-guide.css"', "topic stylesheet integration");
+need(page, 'import "./reference-dashboard-v5.css"', "Today dashboard v5 styles");
 need(manifest, 'Sức khỏe Y tế · 9 tháng–18 tuổi', "PWA name");
 need(layout, 'Sức khỏe Y tế · 9 tháng–18 tuổi', "metadata");
 
-console.log("Restore 9m–18y V2 PASS: continuous age scope, enriched 9m–5y guide, active 6–18 topic guides, evidence registry, 3D selection controls, no control-plane leakage.");
+console.log("Restore 9m–18y V2 PASS: continuous age scope, enriched 9m–5y guide, active 6–18 topic guides, visible Today integration, evidence registry, 3D selection controls, no control-plane leakage.");
