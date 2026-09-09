@@ -3,6 +3,7 @@ import fs from "node:fs";
 const framework = fs.readFileSync("app/suc-khoe-tre/health-framework.tsx", "utf8");
 const quick = fs.readFileSync("app/suc-khoe-tre/premium-quick-actions.tsx", "utf8");
 const styles = fs.readFileSync("app/suc-khoe-tre/premium-health-ui.css", "utf8");
+const v8Styles = fs.readFileSync("app/suc-khoe-tre/reference-dashboard-v8.css", "utf8");
 const page = fs.readFileSync("app/suc-khoe-tre/page.tsx", "utf8");
 
 function need(source, token, label) {
@@ -43,6 +44,15 @@ for (const token of [
   "@media(prefers-reduced-motion:reduce)",
 ]) need(styles, token, "premium responsive/3D/accessibility style");
 
+for (const token of [
+  "@media (min-width:901px) and (max-height:820px)",
+  "@media (min-width:621px) and (max-width:900px)",
+  "@media (max-width:620px)",
+  ".ref-age-scope{grid-template-columns:1fr!important",
+  "scroll-snap-type:x proximity",
+  ".hf-bottom-nav{padding-bottom:max(6px,env(safe-area-inset-bottom))!important}",
+]) need(v8Styles, token, "V8 viewport refinement");
+
 need(page, 'import "./premium-health-ui.css";', "theme import");
 const imports = [...page.matchAll(/import\s+"\.\/(.+?\.css)";/g)].map((match) => match[1]);
 const v1Index = imports.indexOf("premium-health-ui.css");
@@ -50,17 +60,17 @@ const v2Index = imports.indexOf("premium-health-ui-v2.css");
 const referenceIndex = imports.indexOf("reference-dashboard-v4.css");
 const referenceV5Index = imports.indexOf("reference-dashboard-v5.css");
 const referenceV6Index = imports.indexOf("reference-dashboard-v6.css");
+const referenceV8Index = imports.indexOf("reference-dashboard-v8.css");
 const iconsIndex = imports.indexOf("reference-dashboard-icons.css");
 if (v1Index < 0) throw new Error("Premium Health UI V1 stylesheet phải được nạp");
 if (v2Index >= 0) {
-  if (v2Index !== v1Index + 1) {
-    throw new Error("Premium UI V1 phải nằm ngay trước V2 để giữ thứ tự refinement");
-  }
+  if (v2Index !== v1Index + 1) throw new Error("Premium UI V1 phải nằm ngay trước V2 để giữ thứ tự refinement");
   if (referenceIndex >= 0) {
     if (referenceIndex !== v2Index + 1) throw new Error("Reference dashboard V4 phải nạp ngay sau V2");
     if (referenceV5Index >= 0 && referenceV5Index !== referenceIndex + 1) throw new Error("Reference dashboard V5 phải nạp ngay sau V4");
     if (referenceV6Index >= 0 && referenceV6Index !== referenceV5Index + 1) throw new Error("Reference dashboard V6 phải nạp ngay sau V5");
-    const lastReferenceIndex = referenceV6Index >= 0 ? referenceV6Index : referenceV5Index >= 0 ? referenceV5Index : referenceIndex;
+    if (referenceV8Index >= 0 && referenceV8Index !== referenceV6Index + 1) throw new Error("Reference dashboard V8 phải nạp ngay sau V6");
+    const lastReferenceIndex = referenceV8Index >= 0 ? referenceV8Index : referenceV6Index >= 0 ? referenceV6Index : referenceV5Index >= 0 ? referenceV5Index : referenceIndex;
     if (iconsIndex !== lastReferenceIndex + 1 || imports.at(-1) !== "reference-dashboard-icons.css") {
       throw new Error("Icon polish phải là stylesheet cuối sau các lớp reference refinement");
     }
@@ -77,4 +87,4 @@ if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET|healthD
 
 if (!styles.includes(".hf-bottom-nav{display:grid}")) throw new Error("Mobile phải giữ bottom navigation khi sidebar ẩn");
 
-console.log("Premium Health UI V1/V6 PASS: scenic hero, compact command ribbon, ordered reference refinements, 3D states and responsive navigation are wired without changing health/control-plane boundaries.");
+console.log("Premium Health UI V1/V8 PASS: responsive short-laptop, tablet and mobile refinements are ordered without changing health/control-plane boundaries.");
