@@ -1,7 +1,7 @@
 import fs from "node:fs";
 
 const framework = fs.readFileSync("app/suc-khoe-tre/health-framework.tsx", "utf8");
-const module = fs.readFileSync("app/suc-khoe-tre/activity-care-stage-panel.tsx", "utf8");
+const lifeStageModule = fs.readFileSync("app/suc-khoe-tre/activity-care-stage-panel.tsx", "utf8");
 
 function need(source, token, label) {
   if (!source.includes(token)) throw new Error(`V10 activity/care thiếu ${label}: ${token}`);
@@ -31,7 +31,7 @@ for (const token of [
   '9–12 giờ ngủ/24 giờ',
   '8–10 giờ ngủ/24 giờ',
   'Không dùng bộ đếm nghỉ mắt kiểu học đường',
-]) need(module, token, "8 life-stage guidance");
+]) need(lifeStageModule, token, "8 life-stage guidance");
 
 for (const forbidden of [
   "/api/control",
@@ -41,9 +41,9 @@ for (const forbidden of [
   "calculateDose",
   "weightLossScore",
 ]) {
-  if (module.includes(forbidden)) throw new Error(`V10 activity/care không được chứa control/clinical generation: ${forbidden}`);
+  if (lifeStageModule.includes(forbidden)) throw new Error(`V10 activity/care không được chứa control/clinical generation: ${forbidden}`);
 }
-if (/\bfetch\s*\(/.test(module)) throw new Error("V10 activity/care không được gọi network trực tiếp");
+if (/\bfetch\s*\(/.test(lifeStageModule)) throw new Error("V10 activity/care không được gọi network trực tiếp");
 
 for (const token of [
   'import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel"',
