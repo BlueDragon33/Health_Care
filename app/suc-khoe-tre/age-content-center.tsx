@@ -40,32 +40,26 @@ const STAGE_NOTES: Partial<Record<HealthLifeStageId, readonly string[]>> = {
 type Sex = "male" | "female" | "";
 
 export default function AgeContentCenter({ ageMonths: suppliedAgeMonths, sex: suppliedSex }: { ageMonths?: number | null; sex?: Sex }) {
-  const [profileAgeMonths, setProfileAgeMonths] = useState<number | null>(suppliedAgeMonths ?? null);
-  const [profileSex, setProfileSex] = useState<Sex>(suppliedSex ?? "");
+  const [detectedAgeMonths, setDetectedAgeMonths] = useState<number | null>(null);
+  const [detectedSex, setDetectedSex] = useState<Sex>("");
+  const [selectedOverride, setSelectedOverride] = useState<HealthLifeStageId | null>(null);
 
   useEffect(() => {
-    if (suppliedAgeMonths !== undefined || suppliedSex !== undefined) {
-      setProfileAgeMonths(suppliedAgeMonths ?? null);
-      setProfileSex(suppliedSex ?? "");
-      return;
-    }
+    if (suppliedAgeMonths !== undefined || suppliedSex !== undefined) return;
     const timer = window.setTimeout(() => {
       const registry = loadHealthProfileRegistry();
       const activeId = registry.activeProfileId ?? registry.profiles[0]?.id;
       const identity = registry.profiles.find((item) => item.id === activeId);
-      setProfileAgeMonths(identity?.birthDate ? completedAgeMonths(identity.birthDate, todayKey()) : null);
-      setProfileSex(identity?.sexForGrowthReference ?? "");
+      setDetectedAgeMonths(identity?.birthDate ? completedAgeMonths(identity.birthDate, todayKey()) : null);
+      setDetectedSex(identity?.sexForGrowthReference ?? "");
     }, 0);
     return () => window.clearTimeout(timer);
   }, [suppliedAgeMonths, suppliedSex]);
 
+  const profileAgeMonths = suppliedAgeMonths !== undefined ? suppliedAgeMonths : detectedAgeMonths;
+  const profileSex = suppliedSex !== undefined ? suppliedSex : detectedSex;
   const current = useMemo(() => HEALTH_LIFE_STAGES.find((stage) => profileAgeMonths !== null && profileAgeMonths >= stage.minMonths && profileAgeMonths <= stage.maxMonths) ?? null, [profileAgeMonths]);
-  const [selectedId, setSelectedId] = useState<HealthLifeStageId>("infant-9-11m");
-
-  useEffect(() => {
-    if (current) setSelectedId(current.id);
-  }, [current]);
-
+  const selectedId = selectedOverride ?? current?.id ?? "infant-9-11m";
   const selected = HEALTH_LIFE_STAGES.find((stage) => stage.id === selectedId) ?? HEALTH_LIFE_STAGES[0];
   const isEarlyChildhood = selected.maxMonths <= 71;
 
@@ -76,7 +70,7 @@ export default function AgeContentCenter({ ageMonths: suppliedAgeMonths, sex: su
     </header>
 
     <div className="ac-stage-tabs" role="tablist" aria-label="Chọn giai đoạn tuổi để xem nội dung">
-      {HEALTH_LIFE_STAGES.map((stage) => <button key={stage.id} type="button" role="tab" aria-selected={selectedId === stage.id} aria-pressed={selectedId === stage.id} className={selectedId === stage.id ? "is-active" : ""} onClick={() => setSelectedId(stage.id)}><span>{stage.shortLabel}</span>{current?.id === stage.id ? <small>Tuổi hồ sơ</small> : null}</button>)}
+      {HEALTH_LIFE_STAGES.map((stage) => <button key={stage.id} type="button" role="tab" aria-selected={selectedId === stage.id} className={selectedId === stage.id ? "is-active" : ""} onClick={() => setSelectedOverride(stage.id)}><span>{stage.shortLabel}</span>{current?.id === stage.id ? <small>Tuổi hồ sơ</small> : null}</button>)}
     </div>
 
     <article className="ac-stage-summary">
