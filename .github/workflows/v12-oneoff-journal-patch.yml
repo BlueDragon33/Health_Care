@@ -1,0 +1,96 @@
+name: V12 one-off journal runtime patch
+
+on:
+  push:
+    branches:
+      - feature/journal-life-stage-v12
+
+permissions:
+  contents: write
+
+concurrency:
+  group: v12-oneoff-journal-runtime
+  cancel-in-progress: false
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/journal-life-stage-v12
+          fetch-depth: 0
+
+      - name: Guarded patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('app/suc-khoe-tre/health-framework.tsx')
+          text = path.read_text()
+
+          def replace_once(old, new, label):
+              global text
+              count = text.count(old)
+              if count == 0 and new in text:
+                  return
+              if count != 1:
+                  raise SystemExit(f'{label}: expected 1 occurrence, found {count}')
+              text = text.replace(old, new, 1)
+
+          replace_once(
+              'import { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";',
+              'import { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";\nimport JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";',
+              'journal import',
+          )
+
+          old_symptoms = 'const symptoms = ["Đau đầu", "Đau bụng", "Ho", "Sổ mũi", "Đau họng", "Sốt", "Mệt", "Khác"];\n'
+          if old_symptoms in text:
+              text = text.replace(old_symptoms, '', 1)
+
+          replace_once(
+              'const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);',
+              'const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);\n  const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);\n  const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);',
+              'journal derived state',
+          )
+
+          header = '<SectionHeader title="Nhật ký" description="Ghi cảm nhận và triệu chứng theo thời gian. Đây không phải công cụ tự chẩn đoán hoặc tự kê đơn." aside={formatDate(dayKey)} />'
+          replace_once(
+              header,
+              header + '\n          <JournalStagePanel stage={profileAge.lifeStage} />',
+              'journal stage panel',
+          )
+
+          if 'symptoms.map(' in text:
+              count = text.count('symptoms.map(')
+              if count != 1:
+                  raise SystemExit(f'symptom option map: expected 1 occurrence, found {count}')
+              text = text.replace('symptoms.map(', 'journalObservations.map(', 1)
+          elif 'journalObservations.map(' not in text:
+              raise SystemExit('symptom option map token not found')
+
+          old_heading = '<span className="hf-kicker">Cảm nhận</span><h3>Hôm nay cảm thấy</h3>'
+          new_heading = '<span className="hf-kicker">Cảm nhận / tình trạng chung</span><h3>{journalConfig.feelingPrompt}</h3>'
+          replace_once(old_heading, new_heading, 'feeling prompt')
+
+          old_placeholder = 'placeholder="Điều gì đáng chú ý hôm nay?"'
+          new_placeholder = 'placeholder={journalConfig.notePrompt}'
+          if old_placeholder in text:
+              text = text.replace(old_placeholder, new_placeholder, 1)
+          elif new_placeholder not in text:
+              raise SystemExit('journal note placeholder token not found')
+
+          path.write_text(text)
+          PY
+
+      - name: Commit runtime patch when needed
+        run: |
+          if git diff --quiet -- app/suc-khoe-tre/health-framework.tsx; then
+            echo "Runtime already patched."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx
+          git commit -m "Adapt Journal continuously across life stages"
+          git push origin HEAD:feature/journal-life-stage-v12
