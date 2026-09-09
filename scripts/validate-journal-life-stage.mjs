@@ -31,8 +31,13 @@ for (const token of [
   "journalConfigForLifeStage",
 ]) need(journal, token, "infant/adolescent journal safety");
 
+const journalImport = 'import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage"';
+need(framework, journalImport, "runtime import");
+if (framework.split(journalImport).length - 1 !== 1) {
+  throw new Error("Journal V12 phải import JournalStagePanel đúng 1 lần");
+}
+
 for (const token of [
-  'import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage"',
   'const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage)',
   'const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage)',
   '<JournalStagePanel stage={profileAge.lifeStage} />',
