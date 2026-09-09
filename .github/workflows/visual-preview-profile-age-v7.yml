@@ -1,4 +1,4 @@
-name: Capture Health profile-age V7 preview
+name: Capture Health responsive V8 preview
 
 on:
   push:
@@ -26,25 +26,28 @@ jobs:
       - name: Start preview server
         run: |
           mkdir -p .wrangler
-          nohup npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/health-profile-v7.log 2>&1 &
+          nohup npm run dev -- --host 127.0.0.1 --port 4173 > /tmp/health-responsive-v8.log 2>&1 &
           for i in $(seq 1 90); do
             if curl -fsS http://127.0.0.1:4173/suc-khoe-tre/visual-preview >/dev/null; then
               exit 0
             fi
             sleep 1
           done
-          cat /tmp/health-profile-v7.log
+          cat /tmp/health-responsive-v8.log
           exit 1
-      - name: Capture real browser screenshot
+      - name: Capture real browser screenshots
         run: |
           CHROME="$(command -v google-chrome-stable || command -v google-chrome || command -v chromium-browser || command -v chromium)"
           test -n "$CHROME"
-          "$CHROME" --headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --window-size=1536,1024 --virtual-time-budget=10000 --run-all-compositor-stages-before-draw --screenshot=health-profile-age-v7.png http://127.0.0.1:4173/suc-khoe-tre/visual-preview
-          file health-profile-age-v7.png
-      - name: Upload screenshot
+          BASE_ARGS="--headless=new --no-sandbox --disable-dev-shm-usage --disable-gpu --hide-scrollbars --force-device-scale-factor=1 --virtual-time-budget=10000 --run-all-compositor-stages-before-draw"
+          $CHROME $BASE_ARGS --window-size=390,844 --screenshot=health-v8-mobile-390x844.png http://127.0.0.1:4173/suc-khoe-tre/visual-preview
+          $CHROME $BASE_ARGS --window-size=768,1024 --screenshot=health-v8-tablet-768x1024.png http://127.0.0.1:4173/suc-khoe-tre/visual-preview
+          $CHROME $BASE_ARGS --window-size=1366,768 --screenshot=health-v8-laptop-1366x768.png http://127.0.0.1:4173/suc-khoe-tre/visual-preview
+          file health-v8-*.png
+      - name: Upload screenshots
         uses: actions/upload-artifact@v4
         with:
-          name: health-profile-age-v7
-          path: health-profile-age-v7.png
+          name: health-responsive-v8
+          path: health-v8-*.png
           if-no-files-found: error
           retention-days: 3
