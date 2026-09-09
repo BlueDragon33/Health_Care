@@ -24,7 +24,7 @@ for (const token of [
 ]) need(growth, token, "life-stage growth presentation");
 
 for (const token of [
-  'import { growthConfigForLifeStage, growthSummaryMetric } from "./growth-life-stage"',
+  'import { growthConfigForLifeStage, growthSummaryMetric, growthTimelinePresentation } from "./growth-life-stage"',
   'const growthStage = useMemo(() => growthConfigForLifeStage(profileAge.lifeStage)',
   'const growthSummary = useMemo(() => growthSummaryMetric(profileAge.months',
   '{growthStage.statureLabel}',
@@ -44,4 +44,4 @@ for (const forbidden of ["/api/control", "CONTROL_SERVICE_SECRET", "diagnose(", 
 }
 if (/\bfetch\s*\(/.test(growth)) throw new Error("Growth life-stage không được gọi network trực tiếp");
 
-console.log("Growth V13 PASS: measurement wording follows life stage; under-5 summary avoids BMI 5–19 classification UI; storage/control-plane boundaries unchanged.");
+console.log("Growth V13 PASS: measurement wording follows life stage; under-5 summary avoids BMI 5–19 classification UI; V14 helper wiring remains compatible; storage/control-plane boundaries unchanged.");
