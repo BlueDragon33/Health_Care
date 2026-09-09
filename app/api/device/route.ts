@@ -6,6 +6,7 @@ import {
   touchSiteAccessSession,
   verifySiteDeviceProof,
 } from "../../device-auth.server";
+import { getHealthDeviceAutomationSettings } from "../../device-automation.server";
 
 export const dynamic = "force-dynamic";
 
@@ -16,11 +17,16 @@ export async function POST(request: Request) {
     const hostname = new URL(request.url).hostname;
     const previewRequest = hostname === "terminal.local" || hostname === "localhost";
     if (action === "register") {
-      const [device, policy] = await Promise.all([
-        registerSiteDevice(payload.publicKey, payload.metadata, previewRequest),
+      const [policy, automation] = await Promise.all([
         getSiteAccessPolicy(),
+        getHealthDeviceAutomationSettings(),
       ]);
-      return Response.json({ device, policy }, { headers: { "cache-control": "no-store, private" } });
+      const device = await registerSiteDevice(
+        payload.publicKey,
+        payload.metadata,
+        previewRequest || automation.autoApproveDevices,
+      );
+      return Response.json({ device, policy, automation }, { headers: { "cache-control": "no-store, private" } });
     }
     if (action === "challenge") {
       return Response.json(await createSiteDeviceChallenge(payload.deviceId), { headers: { "cache-control": "no-store, private" } });
