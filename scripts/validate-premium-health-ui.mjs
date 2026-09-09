@@ -47,10 +47,19 @@ need(page, 'import "./premium-health-ui.css";', "theme import");
 const imports = [...page.matchAll(/import\s+"\.\/(.+?\.css)";/g)].map((match) => match[1]);
 const v1Index = imports.indexOf("premium-health-ui.css");
 const v2Index = imports.indexOf("premium-health-ui-v2.css");
+const referenceIndex = imports.indexOf("reference-dashboard-v4.css");
+const iconsIndex = imports.indexOf("reference-dashboard-icons.css");
 if (v1Index < 0) throw new Error("Premium Health UI V1 stylesheet phải được nạp");
 if (v2Index >= 0) {
-  if (v2Index !== v1Index + 1 || imports.at(-1) !== "premium-health-ui-v2.css") {
-    throw new Error("Khi có Premium UI V2, V1 phải nằm ngay trước V2 và V2 phải là stylesheet cuối");
+  if (v2Index !== v1Index + 1) {
+    throw new Error("Premium UI V1 phải nằm ngay trước V2 để giữ thứ tự refinement");
+  }
+  if (referenceIndex >= 0) {
+    if (referenceIndex !== v2Index + 1 || iconsIndex !== referenceIndex + 1 || imports.at(-1) !== "reference-dashboard-icons.css") {
+      throw new Error("Reference dashboard phải nạp sau V2 và icon polish phải là stylesheet cuối");
+    }
+  } else if (imports.at(-1) !== "premium-health-ui-v2.css") {
+    throw new Error("Khi chưa có reference refinement, V2 phải là stylesheet cuối");
   }
 } else if (imports.at(-1) !== "premium-health-ui.css") {
   throw new Error("Premium theme V1 phải được import cuối khi chưa có lớp refinement mới");
@@ -62,4 +71,4 @@ if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET|healthD
 
 if (!styles.includes(".hf-bottom-nav{display:grid}")) throw new Error("Mobile phải giữ bottom navigation khi sidebar ẩn");
 
-console.log("Premium Health UI V1 PASS: scenic hero, glass profile strip, six quick actions, premium card system, 3D states, responsive mobile navigation and reduced-motion support are wired without changing health/control-plane boundaries.");
+console.log("Premium Health UI V1 PASS: scenic hero, glass profile strip, six quick actions, versioned refinements, 3D states and responsive navigation are wired without changing health/control-plane boundaries.");
