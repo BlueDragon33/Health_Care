@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import type { HealthProfileIdentity, HealthProfileRegistry } from "./health-profile-contracts";
+import { completedAgeMonths } from "./who-bmi-reference";
+import { todayKey } from "./health-local-store";
 
 function initials(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean);
@@ -12,13 +14,12 @@ function initials(value: string) {
 
 function ageLabel(profile: HealthProfileIdentity) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(profile.birthDate)) return "Chưa nhập ngày sinh";
-  const birth = new Date(`${profile.birthDate}T00:00:00`);
-  const now = new Date();
-  if (!Number.isFinite(birth.getTime()) || birth > now) return "Chưa nhập ngày sinh";
-  let years = now.getFullYear() - birth.getFullYear();
-  const beforeBirthday = now.getMonth() < birth.getMonth() || (now.getMonth() === birth.getMonth() && now.getDate() < birth.getDate());
-  if (beforeBirthday) years -= 1;
-  return years >= 0 ? `${years} tuổi` : "Chưa nhập ngày sinh";
+  const months = completedAgeMonths(profile.birthDate, todayKey());
+  if (months === null || months < 0) return "Chưa nhập ngày sinh";
+  if (months < 24) return `${months} tháng`;
+  const years = Math.floor(months / 12);
+  const remainder = months % 12;
+  return remainder ? `${years} tuổi ${remainder} tháng` : `${years} tuổi`;
 }
 
 export default function ProfileSwitcher({
