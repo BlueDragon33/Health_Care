@@ -1,16 +1,13 @@
-name: Deploy Health_Care to Cloudflare
+name: Legacy Cloudflare Deploy (manual only)
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: deploy-health-care-main-cloudflare
+  group: legacy-health-care-cloudflare
   cancel-in-progress: true
 
 jobs:
@@ -34,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Validate before deployment
+      - name: Validate legacy deployment explicitly
         run: |
           npm run validate:growth
           npm run validate:framework
@@ -43,18 +40,17 @@ jobs:
           npm run lint
           npm run build
 
-      - name: Require Cloudflare deployment credentials
+      - name: Require legacy Cloudflare credentials
         if: ${{ env.CLOUDFLARE_API_TOKEN == '' || env.CLOUDFLARE_ACCOUNT_ID == '' }}
         run: |
-          echo '::error::Health_Care passed source validation but production deployment is blocked.'
-          echo '::error::Configure CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID in this repository before production can be updated.'
-          echo 'The existing production Worker was not modified.'
+          echo '::error::Legacy Cloudflare deployment was requested manually but credentials are not configured.'
+          echo 'Primary Application Management integration runs through ChatGPT Sites and does not require this workflow.'
           exit 1
 
       - name: Apply dedicated D1 migrations
         run: npx wrangler d1 migrations apply suc-khoe-tre-db --remote --config wrangler.d1.jsonc
 
-      - name: Deploy standalone Health Worker
+      - name: Deploy legacy standalone Health Worker
         run: >-
           npx wrangler deploy --name suc-khoe-tre
           --var HEALTH_BUILD_REVISION:${GITHUB_SHA}
