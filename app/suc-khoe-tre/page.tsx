@@ -22,8 +22,8 @@ import "./control-plane.css";
 import "./premium-health-ui.css";
 import "./premium-health-ui-v2.css";
 import "./reference-dashboard-v4.css";
-import "./reference-dashboard-icons.css";
 import "./reference-dashboard-v5.css";
+import "./reference-dashboard-icons.css";
 
 export const dynamic = "force-dynamic";
 
