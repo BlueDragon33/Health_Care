@@ -29,6 +29,7 @@ import HealthTimeline from "./health-timeline";
 import ReminderManager, { repeatLabels } from "./reminder-manager";
 import NutritionStagePanel from "./nutrition-stage-panel";
 import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel";
+import { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
@@ -75,15 +76,6 @@ const navigation: { id: SectionId; label: string; short: string }[] = [
 ];
 
 const dailySections: SectionId[] = ["today", "nutrition", "activity", "care", "journal"];
-const todayTasks: { key: TaskKey; label: string; group: string }[] = [
-  { key: "breakfast", label: "Ăn sáng", group: "Dinh dưỡng" },
-  { key: "water", label: "Theo dõi nước uống", group: "Dinh dưỡng" },
-  { key: "movement", label: "Có vận động trong ngày", group: "Vận động" },
-  { key: "teethMorning", label: "Đánh răng buổi sáng", group: "Chăm sóc" },
-  { key: "teethEvening", label: "Đánh răng buổi tối", group: "Chăm sóc" },
-  { key: "sleep", label: "Chuẩn bị ngủ đúng kế hoạch", group: "Giấc ngủ" },
-];
-
 const foodGroups = ["Đạm", "Rau", "Trái cây", "Sữa / tương đương", "Ngũ cốc / tinh bột", "Nước"];
 const symptoms = ["Đau đầu", "Đau bụng", "Ho", "Sổ mũi", "Đau họng", "Sốt", "Mệt", "Khác"];
 const categoryLabels: Record<Reminder["category"], string> = { nutrition: "Dinh dưỡng", water: "Nước", activity: "Vận động", care: "Chăm sóc", growth: "Đo tăng trưởng", appointment: "Lịch khám", other: "Khác" };
@@ -212,12 +204,13 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
   const today = todayKey();
   const day = currentDay(state, dayKey);
-  const completed = todayTasks.filter((task) => day.tasks[task.key]).length;
-  const progress = Math.round((completed / todayTasks.length) * 100);
   const contentReady = initialCourse !== null && initialCourse !== undefined;
   const growth = useMemo(() => [...state.growth].sort((a, b) => b.date.localeCompare(a.date)), [state.growth]);
   const latestGrowth = growth[0] ?? null;
   const profileAge = useMemo(() => profileAgeScope(state.profile.birthDate, today), [state.profile.birthDate, today]);
+  const todayRoutine = useMemo(() => todayRoutineForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
+  const completed = todayRoutine.tasks.filter((task) => day.tasks[task.key]).length;
+  const progress = Math.round((completed / todayRoutine.tasks.length) * 100);
   const activityOptions = useMemo(() => activityOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);
   const selectedActivityType = activityOptions.includes(activityType) ? activityType : activityOptions[0];
   const latestAssessment = useMemo(() => latestGrowth ? assessWhoBmiForAge({ birthDate: state.profile.birthDate, measurementDate: latestGrowth.date, sex: state.profile.sex, heightCm: latestGrowth.heightCm, weightKg: latestGrowth.weightKg }) : null, [latestGrowth, state.profile.birthDate, state.profile.sex]);
@@ -379,23 +372,23 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         {dailySections.includes(active) ? <DayToolbar dayKey={dayKey} today={today} onChange={setDayKey} /> : null}
 
         {active === "today" ? <section className="hf-section">
-          <SectionHeader title={dayKey === today ? "Hôm nay" : "Ngày đã chọn"} description="Checklist, tiến độ và nhắc việc được giữ liên tục khi trẻ lớn dần; nội dung chuyên môn sẽ thay đổi theo giai đoạn tuổi." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />
+          <SectionHeader title={dayKey === today ? todayRoutine.title : "Ngày đã chọn"} description="Checklist và cách diễn giải tiến độ tự đổi theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi; dữ liệu cũ vẫn dùng cùng schema cục bộ để không mất lịch sử." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />
           <PremiumQuickActions onNavigate={(target) => setActive(target)} />
           <StagePanel stage={profileAge.lifeStage} />
           <div className="hf-today-grid">
-            <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>
+            <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayRoutine.tasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>{todayRoutine.progressSummary}</p></article>
             <article className="hf-next-card"><span>Việc tiếp theo</span><strong>{nextReminder?.reminder.title ?? "Chưa có nhắc việc"}</strong><p>{nextReminder ? `${formatDateTime(nextReminder.date)} · ${repeatLabels[nextReminder.reminder.repeat]}` : "Tạo nhắc việc trong Hồ sơ → Lịch & nhắc việc."}</p></article>
           </div>
           {activeProfileId ? <AttentionQueue state={state} profileId={activeProfileId} onNavigate={(target) => setActive(target)} /> : null}
           <div className="hf-dashboard-grid">
-            <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayTasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div></section>
+            <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Checklist theo tuổi</span><h3>Việc trong ngày</h3></div><small>{formatDate(dayKey)}</small></div><div className="hf-task-list">{todayRoutine.tasks.map((task) => <label className={day.tasks[task.key] ? "hf-task is-done" : "hf-task"} key={task.key}><input type="checkbox" checked={day.tasks[task.key]} onChange={() => toggleTask(task.key)} /><span><strong>{task.label}</strong><small>{task.group}</small></span></label>)}</div><p className="hf-muted">{todayRoutine.note}</p></section>
             <aside className="hf-quick-column">
               <article className="hf-quick-card"><span>Tăng trưởng</span><strong>{latestGrowth ? `${latestGrowth.heightCm} cm · ${latestGrowth.weightKg} kg` : "Chưa có số đo"}</strong><small>{latestGrowth ? assessmentLabel(latestAssessment) : "Thêm chiều cao và cân nặng để bắt đầu timeline."}</small><button type="button" onClick={() => setActive("growth")}>Mở tăng trưởng</button></article>
-              <article className="hf-quick-card"><span>Dinh dưỡng</span><strong>{day.foodGroups.length}/{foodGroups.length} nhóm · {day.waterCups} cốc nước</strong><small>{day.meals.length} bản ghi bữa ăn ngày đã chọn.</small><button type="button" onClick={() => setActive("nutrition")}>Mở dinh dưỡng</button></article>
+              <article className="hf-quick-card"><span>Dinh dưỡng</span><strong>{todayNutritionMetric(profileAge.lifeStage, day, foodGroups.length)}</strong><small>{profileAge.lifeStage?.id === "infant-9-11m" ? "Bản ghi chỉ để nhìn xu hướng ăn bổ sung; không suy ra trẻ đã ăn đủ." : `${day.meals.length} bản ghi bữa ăn ngày đã chọn.`}</small><button type="button" onClick={() => setActive("nutrition")}>Mở dinh dưỡng</button></article>
               <article className="hf-quick-card"><span>Vận động</span><strong>{day.activities.reduce((sum, item) => sum + item.minutes, 0)} phút</strong><small>{day.activities.length ? day.activities.map((item) => item.type).join(" · ") : "Chưa ghi hoạt động."}</small><button type="button" onClick={() => setActive("activity")}>Mở vận động</button></article>
             </aside>
           </div>
-          <section className="hf-panel hf-week-panel"><div className="hf-panel-head"><div><span className="hf-kicker">7 ngày</span><h3>Nhìn nhanh thói quen</h3></div><small>Kết thúc tại {formatDate(dayKey)}</small></div><div className="hf-week-strip">{historyKeys.map((key) => { const record = currentDay(state, key); const done = todayTasks.filter((task) => record.tasks[task.key]).length; const minutes = record.activities.reduce((sum, item) => sum + item.minutes, 0); return <button type="button" key={key} className={key === dayKey ? "is-selected" : ""} onClick={() => setDayKey(key)}><span>{formatWeekday(key)}</span><strong>{done}/{todayTasks.length}</strong><small>{record.waterCups} cốc · {minutes} phút</small></button>; })}</div></section>
+          <section className="hf-panel hf-week-panel"><div className="hf-panel-head"><div><span className="hf-kicker">7 ngày</span><h3>Nhìn nhanh thói quen theo tuổi</h3></div><small>Kết thúc tại {formatDate(dayKey)}</small></div><div className="hf-week-strip">{historyKeys.map((key) => { const record = currentDay(state, key); const done = todayRoutine.tasks.filter((task) => record.tasks[task.key]).length; return <button type="button" key={key} className={key === dayKey ? "is-selected" : ""} onClick={() => setDayKey(key)}><span>{formatWeekday(key)}</span><strong>{done}/{todayRoutine.tasks.length}</strong><small>{todayWeekMetric(profileAge.lifeStage, record)}</small></button>; })}</div></section>
         </section> : null}
 
         {active === "growth" ? <section className="hf-section">
