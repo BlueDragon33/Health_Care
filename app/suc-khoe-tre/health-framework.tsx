@@ -31,8 +31,6 @@ import NutritionStagePanel from "./nutrition-stage-panel";
 import { ActivityStagePanel, CareStagePanel, activityOptionsForLifeStage, shouldShowEyeBreakTracker } from "./activity-care-stage-panel";
 import { todayNutritionMetric, todayRoutineForLifeStage, todayWeekMetric } from "./today-life-stage";
 import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
-import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
-import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";
 import AttentionQueue from "./attention-queue";
 import ProfileSwitcher from "./profile-switcher";
 import PremiumQuickActions from "./premium-quick-actions";
