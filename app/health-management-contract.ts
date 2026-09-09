@@ -1,0 +1,49 @@
+export const HEALTH_MANAGEMENT_CONTRACT = {
+  schemaVersion: 1,
+  application: "health-care",
+  canonicalApplication: "health-care",
+  displayName: "Sức khỏe Y tế",
+  contractVersion: 1,
+  controlProtocol: "application-management-health-control-v1",
+  transport: "chatgpt-sites",
+  auth: {
+    ticketVersion: "v1",
+    issuer: "application-management",
+    audience: "health-care-control",
+    app: "health-care",
+    ttlSeconds: 300,
+    secretEnv: "HEALTH_CONTROL_SERVICE_SECRET",
+  },
+  endpoints: {
+    contract: "/api/control/contract",
+    status: "/api/control/status",
+    devices: "/api/control/devices",
+    sessions: "/api/control/sessions",
+    policy: "/api/control/policy",
+    contentReview: "/api/control/health-content",
+    audit: "/api/control/audit",
+  },
+  deviceRegistry: {
+    owner: "Health_Care",
+    namespace: "SK-",
+    classes: ["desktop", "tablet", "phone"],
+  },
+  capabilities: [
+    "device-access",
+    "device-edit-permission",
+    "device-calendar-permission",
+    "session-revocation",
+    "access-policy",
+    "content-review",
+    "control-audit",
+  ],
+  boundary: {
+    independentRuntime: true,
+    adminRuntimeEmbedded: false,
+    healthDataInControlPlane: false,
+    profileDataInControlPlane: false,
+    sharedClientDatabase: false,
+  },
+} as const;
+
+export type HealthManagementContract = typeof HEALTH_MANAGEMENT_CONTRACT;
