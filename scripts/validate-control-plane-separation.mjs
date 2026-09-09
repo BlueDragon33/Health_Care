@@ -4,14 +4,18 @@ const controlAuthPath = new URL("../app/control-auth.server.ts", import.meta.url
 const editorAuthPath = new URL("../app/chatgpt-auth.ts", import.meta.url);
 const editorBridgePath = new URL("../app/editor-bridge/page.tsx", import.meta.url);
 const editorLoginPath = new URL("../app/editor-login-required/page.tsx", import.meta.url);
+const editorWorkspacePath = new URL("../app/bien-tap-suc-khoe-tre/workspace.tsx", import.meta.url);
+const editorDeviceAuthPath = new URL("../app/editor-device-auth.server.ts", import.meta.url);
 const wranglerPath = new URL("../wrangler.d1.jsonc", import.meta.url);
 const deployPath = new URL("../.github/workflows/deploy.yml", import.meta.url);
 
-const [controlAuth, editorAuth, editorBridge, editorLogin, wrangler, deploy] = await Promise.all([
+const [controlAuth, editorAuth, editorBridge, editorLogin, editorWorkspace, editorDeviceAuth, wrangler, deploy] = await Promise.all([
   readFile(controlAuthPath, "utf8"),
   readFile(editorAuthPath, "utf8"),
   readFile(editorBridgePath, "utf8"),
   readFile(editorLoginPath, "utf8"),
+  readFile(editorWorkspacePath, "utf8"),
+  readFile(editorDeviceAuthPath, "utf8"),
   readFile(wranglerPath, "utf8"),
   readFile(deployPath, "utf8"),
 ]);
@@ -49,6 +53,12 @@ if (!editorBridge.includes('window.location.hash') || !editorBridge.includes('fe
 }
 if (/learning-management\.boiech-ai\.workers\.dev|workers\.dev/i.test(editorLogin)) {
   throw new Error("Editor login guidance must not point back to the legacy Cloudflare admin URL.");
+}
+if (!editorWorkspace.includes("health-care-editor:") || !editorDeviceAuth.includes("health-care-editor:")) {
+  throw new Error("Editor P-256 proof must use the Health_Care cryptographic domain on both client and server.");
+}
+if (/boi-ech-editor:/i.test(editorWorkspace) || /boi-ech-editor:/i.test(editorDeviceAuth)) {
+  throw new Error("Health_Care editor must not reuse the Boi Ech cryptographic domain.");
 }
 
 const forbiddenPatterns = [
