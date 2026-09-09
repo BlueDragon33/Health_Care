@@ -1,11 +1,21 @@
 import { readFile } from "node:fs/promises";
 
 const controlAuthPath = new URL("../app/control-auth.server.ts", import.meta.url);
+const editorAuthPath = new URL("../app/chatgpt-auth.ts", import.meta.url);
+const editorBridgePath = new URL("../app/editor-bridge/page.tsx", import.meta.url);
+const editorLoginPath = new URL("../app/editor-login-required/page.tsx", import.meta.url);
+const editorWorkspacePath = new URL("../app/bien-tap-suc-khoe-tre/workspace.tsx", import.meta.url);
+const editorDeviceAuthPath = new URL("../app/editor-device-auth.server.ts", import.meta.url);
 const wranglerPath = new URL("../wrangler.d1.jsonc", import.meta.url);
 const deployPath = new URL("../.github/workflows/deploy.yml", import.meta.url);
 
-const [controlAuth, wrangler, deploy] = await Promise.all([
+const [controlAuth, editorAuth, editorBridge, editorLogin, editorWorkspace, editorDeviceAuth, wrangler, deploy] = await Promise.all([
   readFile(controlAuthPath, "utf8"),
+  readFile(editorAuthPath, "utf8"),
+  readFile(editorBridgePath, "utf8"),
+  readFile(editorLoginPath, "utf8"),
+  readFile(editorWorkspacePath, "utf8"),
+  readFile(editorDeviceAuthPath, "utf8"),
   readFile(wranglerPath, "utf8"),
   readFile(deployPath, "utf8"),
 ]);
@@ -25,35 +35,62 @@ for (const marker of requiredControlMarkers) {
   }
 }
 
-const forbiddenControlPatterns = [
-  /values\.CONTROL_SERVICE_SECRET/,
-  /legacy-global/,
-  /https:\/\/learning-management\.boiech-ai\.workers\.dev/,
-  /from\s+["'][^"']*(?:BOIECH_AI|Application-Management|boi-ech|quan-ly-hoc-tap)/i,
-  /require\([^)]*(?:BOIECH_AI|Application-Management|boi-ech|quan-ly-hoc-tap)/i,
-];
-
-for (const pattern of forbiddenControlPatterns) {
-  if (pattern.test(controlAuth)) {
-    throw new Error(`Control-plane separation gate failed: forbidden pattern ${pattern}`);
+for (const marker of [
+  "HEALTH_CONTROL_SERVICE_SECRET",
+  'const CONTROL_ISSUER = "application-management"',
+  'const CONTROL_AUDIENCE = "health-care-control"',
+  'const CONTROL_APP = "health-care"',
+  'const SESSION_ISSUER = "health-care"',
+  'const SESSION_AUDIENCE = "health-care-editor"',
+]) {
+  if (!editorAuth.includes(marker)) {
+    throw new Error(`Editor control gate failed: missing ${marker}`);
   }
 }
 
-if (!/"name"\s*:\s*"suc-khoe-tre"/.test(wrangler)) {
-  throw new Error("Health Worker must keep the standalone suc-khoe-tre identity.");
+if (!editorBridge.includes('window.location.hash') || !editorBridge.includes('fetch("/api/editor/session"') || !editorBridge.includes('method: "POST"')) {
+  throw new Error("Editor bridge must exchange the short-lived ticket from the URL fragment by same-origin POST.");
 }
+if (/learning-management\.boiech-ai\.workers\.dev|workers\.dev/i.test(editorLogin)) {
+  throw new Error("Editor login guidance must not point back to the legacy Cloudflare admin URL.");
+}
+if (!editorWorkspace.includes("health-care-editor:") || !editorDeviceAuth.includes("health-care-editor:")) {
+  throw new Error("Editor P-256 proof must use the Health_Care cryptographic domain on both client and server.");
+}
+if (/boi-ech-editor:/i.test(editorWorkspace) || /boi-ech-editor:/i.test(editorDeviceAuth)) {
+  throw new Error("Health_Care editor must not reuse the Boi Ech cryptographic domain.");
+}
+
+const forbiddenPatterns = [
+  /values\.CONTROL_SERVICE_SECRET/,
+  /\.CONTROL_SERVICE_SECRET\b/,
+  /legacy-global/,
+  /https:\/\/learning-management\.boiech-ai\.workers\.dev/,
+];
+
+for (const [name, source] of [["control auth", controlAuth], ["editor auth", editorAuth]]) {
+  for (const pattern of forbiddenPatterns) {
+    if (pattern.test(source)) {
+      throw new Error(`${name} separation gate failed: forbidden pattern ${pattern}`);
+    }
+  }
+}
+
 if (!/"database_name"\s*:\s*"suc-khoe-tre-db"/.test(wrangler)) {
-  throw new Error("Health_Care must use the dedicated suc-khoe-tre-db database.");
+  throw new Error("Health_Care must keep its dedicated suc-khoe-tre-db database binding.");
 }
 if (/boi[-_]?ech/i.test(wrangler) || /application[-_]?management/i.test(wrangler)) {
-  throw new Error("Health_Care Wrangler configuration must not bind a BOIECH/Admin runtime or database.");
+  throw new Error("Health_Care runtime configuration must not bind a BOIECH/Admin database or runtime.");
 }
 
-if (!deploy.includes("d1 migrations apply suc-khoe-tre-db")) {
-  throw new Error("Deployment must migrate the dedicated Health_Care D1 database.");
+if (!/workflow_dispatch\s*:/.test(deploy)) {
+  throw new Error("Legacy Cloudflare deployment must remain explicit/manual only.");
 }
-if (!deploy.includes("wrangler deploy --name suc-khoe-tre")) {
-  throw new Error("Deployment must target the standalone Health_Care Worker.");
+if (/\n\s*push\s*:/.test(deploy)) {
+  throw new Error("Health_Care must not auto-deploy to Cloudflare on main pushes after ChatGPT Sites migration.");
+}
+if (!deploy.includes("Legacy Cloudflare Deploy (manual only)")) {
+  throw new Error("Legacy Cloudflare workflow must be clearly marked manual-only.");
 }
 
-console.log("Health_Care control-plane separation: OK");
+console.log("Health_Care ChatGPT Sites control-plane separation: OK");

@@ -140,7 +140,7 @@ export async function verifyEditorProof(payload: Record<string, unknown>) {
   await database.prepare("DELETE FROM content_editor_challenges WHERE nonce = ? AND device_id = ?").bind(challenge, deviceId).run();
   if (!proof || proof.expires_at < Date.now()) throw new EditorAccessError("Phiên xác thực laptop đã hết hạn.", 401, "EDITOR_PROOF_EXPIRED");
   const key = await crypto.subtle.importKey("jwk", publicKeyShape(JSON.parse(row.public_key_jwk)), { name: "ECDSA", namedCurve: "P-256" }, false, ["verify"]);
-  const message = new TextEncoder().encode(`boi-ech-editor:${deviceId}:${challenge}`);
+  const message = new TextEncoder().encode(`health-care-editor:${deviceId}:${challenge}`);
   const valid = await crypto.subtle.verify({ name: "ECDSA", hash: "SHA-256" }, key, fromBase64Url(signature), message);
   if (!valid) throw new EditorAccessError("Laptop không khớp quyền chỉnh sửa.", 403, "EDITOR_DEVICE_MISMATCH");
   return state(row, user);
