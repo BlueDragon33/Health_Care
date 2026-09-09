@@ -1,4 +1,4 @@
-import { DeviceAccessError, getCourseDatabase, type HealthControlAuditDetail } from "./device-auth.server";
+import { DeviceAccessError, getCourseDatabase } from "./device-auth.server";
 
 export type HealthControlWebLaunchIdentity = {
   actor: string;
