@@ -135,7 +135,25 @@ export function saveHealthProfileRegistry(registry: HealthProfileRegistry) {
 export function loadHealthProfileState(profileId: string, identity?: HealthProfileIdentity): HealthLocalState {
   if (typeof window === "undefined") return createInitialHealthState();
   const stored = readJson(profileStateKey(profileId));
-  if (stored) return normalizeHealthState(stored);
+  if (stored) {
+    const normalized = normalizeHealthState(stored);
+    if (!identity) return normalized;
+    const reconciled = {
+      ...normalized,
+      profile: {
+        ...normalized.profile,
+        name: normalized.profile.name.trim() || identity.displayName,
+        birthDate: normalized.profile.birthDate || identity.birthDate,
+        sex: normalized.profile.sex || identity.sexForGrowthReference,
+      },
+    };
+    if (
+      reconciled.profile.name !== normalized.profile.name ||
+      reconciled.profile.birthDate !== normalized.profile.birthDate ||
+      reconciled.profile.sex !== normalized.profile.sex
+    ) writeJson(profileStateKey(profileId), reconciled);
+    return reconciled;
+  }
   const state = createInitialHealthState();
   if (identity) {
     state.profile = {
