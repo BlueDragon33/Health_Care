@@ -1,0 +1,38 @@
+name: V16 wire quick actions once
+
+on:
+  push:
+    branches:
+      - feature/quick-actions-life-stage-v16
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/quick-actions-life-stage-v16
+          fetch-depth: 0
+      - name: Patch quick action runtime and self-remove
+        run: |
+          python <<'PY'
+          from pathlib import Path
+          path = Path('app/suc-khoe-tre/health-framework.tsx')
+          text = path.read_text()
+          old = '<PremiumQuickActions onNavigate={(target) => setActive(target)} />'
+          new = '<PremiumQuickActions stage={profileAge.lifeStage} onNavigate={(target) => setActive(target)} />'
+          count = text.count(old)
+          if count != 1:
+              raise SystemExit(f'Expected exactly one PremiumQuickActions call, got {count}')
+          path.write_text(text.replace(old, new, 1))
+          PY
+          rm .github/workflows/v16-wire-quick-actions-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx .github/workflows/v16-wire-quick-actions-once.yml
+          git commit -m "Wire age-aware Today quick actions"
+          git push origin HEAD:feature/quick-actions-life-stage-v16
