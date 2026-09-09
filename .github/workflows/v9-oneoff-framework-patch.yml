@@ -34,7 +34,7 @@ jobs:
               ('function StagePanel({ stage }: { stage: HealthAgeStage | null })',
                'function StagePanel({ stage }: { stage: HealthLifeStage | null })', 1),
               ('<StagePanel stage={profileAge.stage} />',
-               '<StagePanel stage={profileAge.lifeStage} />', 2),
+               '<StagePanel stage={profileAge.lifeStage} />', 4),
               ('<NutritionStagePanel stage={profileAge.stage} day={day} />',
                '<NutritionStagePanel stage={profileAge.lifeStage} day={day} />', 1),
               ('Checklist nhóm thực phẩm, nước và nhật ký bữa ăn theo ngày; nội dung được cá nhân hóa theo 4 giai đoạn 9–18 tuổi và không dùng chế độ giảm cân người lớn cho trẻ.',
@@ -64,5 +64,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add app/suc-khoe-tre/health-framework.tsx
-          git commit -m "Use continuous life stage in nutrition runtime"
+          git commit -m "Use continuous life stage across daily runtime"
           git push origin HEAD:feature/nutrition-9m-18-v9
