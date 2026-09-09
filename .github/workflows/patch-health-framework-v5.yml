@@ -1,0 +1,74 @@
+name: Apply one-time 9-month framework source migration
+
+on:
+  push:
+    branches:
+      - ui/today-reference-v5-age-9m
+    paths:
+      - .github/workflows/patch-health-framework-v5.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/today-reference-v5-age-9m
+          fetch-depth: 0
+      - name: Patch Health framework source
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('app/suc-khoe-tre/health-framework.tsx')
+          s = p.read_text()
+          replacements = [
+            ('import { HEALTH_AGE_STAGES, profileAgeScope, type HealthAgeStage } from "./health-age-scope";',
+             'import { HEALTH_LIFE_STAGES, profileAgeScope, type HealthAgeStage } from "./health-age-scope";'),
+            ('Sức khỏe Y tế · 9–18 tuổi', 'Sức khỏe Y tế · 9 tháng–18 tuổi'),
+            ('Nhập ngày sinh trong Hồ sơ để hệ thống xác định giai đoạn 9–18 tuổi.',
+             'Nhập ngày sinh trong Hồ sơ để hệ thống xác định giai đoạn từ 9 tháng đến hết 18 tuổi.'),
+            ('<small>9–18 tuổi · đến giai đoạn đại học</small>',
+             '<small>Từ 9 tháng đến hết 18 tuổi</small>'),
+            (': "Sức khỏe Y tế 9–18 tuổi"', ': "Sức khỏe Y tế 9 tháng–18 tuổi"'),
+            ('profileAge.stage?.label ? `${profileAge.stage.label} · Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.`',
+             'profileAge.lifeStage?.label ? `${profileAge.lifeStage.label} · Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.`'),
+            ('if (!growthDate || !(height > 50 && height < 220) || !(weight > 10 && weight < 200)) return;',
+             'if (!growthDate || !(height > 45 && height < 220) || !(weight > 3.5 && weight < 200)) return;'),
+            ('title="Tăng trưởng 9–18 tuổi" description="BMI-for-age được đối chiếu theo đúng tuổi tính bằng tháng và giới tính với WHO Reference 2007. Kết quả là tham chiếu tăng trưởng, không phải chẩn đoán."',
+             'title="Tăng trưởng từ 9 tháng đến hết 18 tuổi" description={profileAge.months !== null && profileAge.months < 60 ? "Trẻ dưới 5 tuổi cần WHO Child Growth Standards 0–5. Ứng dụng vẫn lưu và vẽ xu hướng số đo nhưng không dùng BMI-for-age 5–19 để phân loại." : "Từ 5 tuổi, BMI-for-age được đối chiếu theo đúng tuổi tính bằng tháng và giới tính với WHO Reference 2007. Kết quả là tham chiếu tăng trưởng, không phải chẩn đoán."}'),
+            ('<p className="hf-muted">Nguồn: WHO Reference 2007 · BMI-for-age 5–19 years. Ứng dụng chủ động giới hạn phạm vi sản phẩm đến hết 18 tuổi 11 tháng.</p>',
+             '<p className="hf-muted">{profileAge.months !== null && profileAge.months < 60 ? "Nguồn chuẩn cho trẻ dưới 5 tuổi: WHO Child Growth Standards 0–5. Không dùng bảng BMI-for-age 5–19 để phân loại nhóm này." : "Nguồn: WHO Reference 2007 · BMI-for-age 5–19 years. Ứng dụng chủ động giới hạn phạm vi sản phẩm đến hết 18 tuổi 11 tháng."}</p>'),
+            ('Trong toàn bộ phạm vi 9–18 tuổi, ứng dụng tiếp tục dùng BMI-for-age theo tháng và giới tính. Khi bước sang 19 tuổi, hệ thống dừng đánh giá trẻ/vị thành niên và yêu cầu một chế độ chuyển tiếp người lớn riêng.',
+             'Từ 9 tháng đến dưới 5 tuổi, chuẩn tăng trưởng phải theo WHO Child Growth Standards 0–5; từ 5 đến hết 18 tuổi mới dùng BMI-for-age theo tháng và giới tính của WHO Reference 2007. Khi bước sang 19 tuổi, hệ thống yêu cầu một chế độ chuyển tiếp người lớn riêng.'),
+            ('Một hồ sơ đi cùng từ 9 đến hết 18 tuổi.', 'Một hồ sơ đi cùng từ 9 tháng đến hết 18 tuổi.'),
+            ('Hồ sơ hiện nằm ngoài phạm vi 9–18 tuổi.', 'Hồ sơ hiện nằm ngoài phạm vi 9 tháng–18 tuổi.'),
+            ('{profileAge.stage ? <div className="hf-local-badge">{profileAge.stage.label}</div> : null}',
+             '{profileAge.lifeStage ? <div className="hf-local-badge">{profileAge.lifeStage.label}</div> : null}'),
+            ('<span className="hf-kicker">Lộ trình 9–18</span><h3>4 giai đoạn liên tục</h3>',
+             '<span className="hf-kicker">Lộ trình 9 tháng–18 tuổi</span><h3>8 giai đoạn liên tục</h3>'),
+            ('{HEALTH_AGE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.stage?.id ? "Hiện tại" : "Giai đoạn"}</span>',
+             '{HEALTH_LIFE_STAGES.map((stage) => <article key={stage.id}><span>{stage.id === profileAge.lifeStage?.id ? "Hiện tại" : "Giai đoạn"}</span>'),
+          ]
+          missing = []
+          for old, new in replacements:
+            if old not in s:
+              missing.append(old[:100])
+            else:
+              s = s.replace(old, new)
+          if missing:
+            raise SystemExit('Expected source patterns not found:\n' + '\n'.join(missing))
+          p.write_text(s)
+          PY
+      - name: Commit source migration and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/patch-health-framework-v5.yml
+          git add app/suc-khoe-tre/health-framework.tsx
+          git commit -m "fix: make Health framework genuinely support age 9 months"
+          git push origin HEAD:ui/today-reference-v5-age-9m
