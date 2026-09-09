@@ -47,6 +47,10 @@ const GROWTH_STAGE_CONFIG: Record<string, GrowthStageConfig> = {
   "late-adolescent": DEFAULT_GROWTH_STAGE,
 };
 
+function growthAgeText(ageMonths: number) {
+  return ageMonths < 24 ? `${ageMonths} tháng` : formatAgeMonths(ageMonths);
+}
+
 export function growthConfigForLifeStage(stage: HealthLifeStage | null): GrowthStageConfig {
   if (!stage) return DEFAULT_GROWTH_STAGE;
   return GROWTH_STAGE_CONFIG[stage.id] ?? DEFAULT_GROWTH_STAGE;
@@ -88,7 +92,7 @@ export function growthTimelinePresentation(ageMonths: number | null, bmi: number
   if (ageMonths < 24) {
     return {
       metricLabel: "Chiều dài / cân nặng",
-      detail: `${formatAgeMonths(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
+      detail: `${growthAgeText(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
       useWhoBmiReference: false,
     };
   }
@@ -96,7 +100,7 @@ export function growthTimelinePresentation(ageMonths: number | null, bmi: number
   if (ageMonths < 60) {
     return {
       metricLabel: "Chiều cao / cân nặng",
-      detail: `${formatAgeMonths(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
+      detail: `${growthAgeText(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
       useWhoBmiReference: false,
     };
   }
@@ -104,7 +108,7 @@ export function growthTimelinePresentation(ageMonths: number | null, bmi: number
   if (ageMonths < 108) {
     return {
       metricLabel: "Chiều cao / cân nặng",
-      detail: `${formatAgeMonths(ageMonths)} · chỉ theo dõi xu hướng; bảng LMS định lượng 5–8 tuổi chưa được tích hợp/kiểm định trong ứng dụng`,
+      detail: `${growthAgeText(ageMonths)} · chỉ theo dõi xu hướng; bảng LMS định lượng 5–8 tuổi chưa được tích hợp/kiểm định trong ứng dụng`,
       useWhoBmiReference: false,
     };
   }
@@ -112,14 +116,14 @@ export function growthTimelinePresentation(ageMonths: number | null, bmi: number
   if (ageMonths > 227) {
     return {
       metricLabel: "Chiều cao / cân nặng",
-      detail: `${formatAgeMonths(ageMonths)} · ngoài phạm vi sản phẩm đến hết 18 tuổi 11 tháng`,
+      detail: `${growthAgeText(ageMonths)} · ngoài phạm vi sản phẩm đến hết 18 tuổi 11 tháng`,
       useWhoBmiReference: false,
     };
   }
 
   return {
     metricLabel: `BMI ${bmi === null ? "—" : bmi.toFixed(1)}`,
-    detail: `${formatAgeMonths(ageMonths)} · WHO BMI-for-age 2007`,
+    detail: `${growthAgeText(ageMonths)} · WHO BMI-for-age 2007`,
     useWhoBmiReference: true,
   };
 }
