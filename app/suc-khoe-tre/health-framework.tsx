@@ -21,7 +21,7 @@ import {
   type TaskKey,
 } from "./health-local-store";
 import { nextReminderOccurrence, occurrenceDueNow } from "./health-reminders";
-import { HEALTH_LIFE_STAGES, profileAgeScope, type HealthAgeStage } from "./health-age-scope";
+import { HEALTH_LIFE_STAGES, profileAgeScope, type HealthLifeStage } from "./health-age-scope";
 import { assessWhoBmiForAge, calculateBmi, formatAgeMonths, type WhoBmiAssessment } from "./who-bmi-reference";
 import GrowthTrend from "./growth-trend";
 import WeeklyHealthSummary from "./weekly-health-summary";
@@ -130,7 +130,7 @@ function DayToolbar({ dayKey, today, onChange }: { dayKey: string; today: string
   </div>;
 }
 
-function StagePanel({ stage }: { stage: HealthAgeStage | null }) {
+function StagePanel({ stage }: { stage: HealthLifeStage | null }) {
   return <section className="hf-panel hf-info-panel">
     <span className="hf-kicker">Giai đoạn phát triển</span>
     <h3>{stage?.label ?? "Cần ngày sinh để cá nhân hóa theo tuổi"}</h3>
@@ -379,7 +379,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         {active === "today" ? <section className="hf-section">
           <SectionHeader title={dayKey === today ? "Hôm nay" : "Ngày đã chọn"} description="Checklist, tiến độ và nhắc việc được giữ liên tục khi trẻ lớn dần; nội dung chuyên môn sẽ thay đổi theo giai đoạn tuổi." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />
           <PremiumQuickActions onNavigate={(target) => setActive(target)} />
-          <StagePanel stage={profileAge.stage} />
+          <StagePanel stage={profileAge.lifeStage} />
           <div className="hf-today-grid">
             <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayTasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>Dinh dưỡng · vận động · răng miệng · giấc ngủ.</p></article>
             <article className="hf-next-card"><span>Việc tiếp theo</span><strong>{nextReminder?.reminder.title ?? "Chưa có nhắc việc"}</strong><p>{nextReminder ? `${formatDateTime(nextReminder.date)} · ${repeatLabels[nextReminder.reminder.repeat]}` : "Tạo nhắc việc trong Hồ sơ → Lịch & nhắc việc."}</p></article>
@@ -408,9 +408,9 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
         </section> : null}
 
         {active === "nutrition" ? <section className="hf-section">
-          <SectionHeader title="Dinh dưỡng" description="Checklist nhóm thực phẩm, nước và nhật ký bữa ăn theo ngày; nội dung được cá nhân hóa theo 4 giai đoạn 9–18 tuổi và không dùng chế độ giảm cân người lớn cho trẻ." aside={formatDate(dayKey)} />
-          <StagePanel stage={profileAge.stage} />
-          <NutritionStagePanel stage={profileAge.stage} day={day} />
+          <SectionHeader title="Dinh dưỡng" description="Checklist nhóm thực phẩm, nước và nhật ký bữa ăn theo ngày; nội dung được cá nhân hóa liên tục theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi và không dùng chế độ giảm cân người lớn cho trẻ." aside={formatDate(dayKey)} />
+          <StagePanel stage={profileAge.lifeStage} />
+          <NutritionStagePanel stage={profileAge.lifeStage} day={day} />
           <div className="hf-work-grid">
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nhóm thực phẩm</span><h3>Checklist ngày đã chọn</h3></div><small>{day.foodGroups.length}/{foodGroups.length}</small></div><div className="hf-chip-grid">{foodGroups.map((group) => <button type="button" key={group} className={day.foodGroups.includes(group) ? "hf-chip is-active" : "hf-chip"} onClick={() => toggleFoodGroup(group)}>{group}</button>)}</div></section>
             <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Nước</span><h3>{day.waterCups} cốc</h3></div></div><div className="hf-stepper"><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.max(0, current.waterCups - 1) }))}>−</button><strong>{day.waterCups}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, waterCups: Math.min(50, current.waterCups + 1), tasks: { ...current.tasks, water: true } }))}>+</button></div><p className="hf-muted">Đơn vị “cốc” chỉ để ghi nhanh; chưa tự áp một mục tiêu nước giống nhau cho mọi tuổi/cân nặng.</p></section>
@@ -421,7 +421,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
         {active === "activity" ? <section className="hf-section">
           <SectionHeader title="Vận động" description="Ghi loại hoạt động và số phút trong ngày để theo dõi thói quen xuyên suốt 9–18 tuổi." aside={formatDate(dayKey)} />
-          <StagePanel stage={profileAge.stage} />
+          <StagePanel stage={profileAge.lifeStage} />
           <section className="hf-panel"><div className="hf-panel-head"><div><span className="hf-kicker">Hoạt động trong ngày</span><h3>Thêm vận động</h3></div><strong className="hf-big-number">{day.activities.reduce((sum, item) => sum + item.minutes, 0)} phút</strong></div><div className="hf-inline-form"><select value={activityType} onChange={(event) => setActivityType(event.target.value)}>{activityTypes.map((item) => <option key={item}>{item}</option>)}</select><input inputMode="numeric" value={activityMinutes} onChange={(event) => setActivityMinutes(event.target.value)} placeholder="Số phút" /><button type="button" className="hf-primary" onClick={addActivity}>Thêm</button></div>{day.activities.length ? <div className="hf-entry-list">{[...day.activities].reverse().map((entry) => <article key={entry.id}><span>{entry.minutes} phút</span><strong>{entry.type}</strong><button type="button" onClick={() => updateDay((current) => ({ ...current, activities: current.activities.filter((item) => item.id !== entry.id) }))}>Xóa</button></article>)}</div> : <Empty>Chưa có hoạt động cho ngày này.</Empty>}</section>
           <section className="hf-panel hf-info-panel"><span className="hf-kicker">Đúng phạm vi 9–18</span><h3>Theo dõi sức khỏe, không phải app gym</h3><p>Ứng dụng ưu tiên tăng trưởng, thể lực và thói quen. Không tự đặt mục tiêu giảm cân, siết cân hoặc hình thể người lớn cho trẻ/vị thành niên.</p></section>
           <WeeklyHealthSummary state={state} endDate={dayKey} mode="activity" />
@@ -429,7 +429,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
         {active === "care" ? <section className="hf-section">
           <SectionHeader title="Chăm sóc" description="Giấc ngủ, răng miệng, mắt & học tập và vệ sinh cá nhân; lớp nội dung sẽ thay đổi dần đến giai đoạn tự quản lý sức khỏe trước đại học." aside={formatDate(dayKey)} />
-          <StagePanel stage={profileAge.stage} />
+          <StagePanel stage={profileAge.lifeStage} />
           <div className="hf-module-grid">
             <article className="hf-module-card"><span className="hf-kicker">Giấc ngủ</span><h3>Giờ ngủ & thức dậy</h3><div className="hf-form-grid two"><label>Đi ngủ<input type="time" value={day.sleepStart} onChange={(event) => updateDay((current) => ({ ...current, sleepStart: event.target.value }))} /></label><label>Thức dậy<input type="time" value={day.sleepEnd} onChange={(event) => updateDay((current) => ({ ...current, sleepEnd: event.target.value, tasks: { ...current.tasks, sleep: Boolean(event.target.value) } }))} /></label></div><strong className="hf-card-value">{sleepDuration(day.sleepStart, day.sleepEnd)?.toFixed(1) ?? "—"} giờ</strong><small>Thời lượng được tính từ giờ nhập; đánh giá mục tiêu ngủ theo tuổi sẽ dùng nguồn hướng dẫn riêng.</small></article>
             <article className="hf-module-card"><span className="hf-kicker">Răng miệng</span><h3>Checklist đánh răng</h3><label className="hf-switch-row"><input type="checkbox" checked={day.tasks.teethMorning} onChange={() => toggleTask("teethMorning")} /><span>Sáng</span></label><label className="hf-switch-row"><input type="checkbox" checked={day.tasks.teethEvening} onChange={() => toggleTask("teethEvening")} /><span>Tối</span></label><small>Lịch nha khoa có thể tạo ở mục Nhắc việc.</small></article>
