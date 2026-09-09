@@ -11,6 +11,7 @@ import type { HealthProfileIdentity, HealthProfileRegistry, ProfileMigrationEnve
 export const PROFILE_REGISTRY_KEY = "suc-khoe-y-te:profiles:v1";
 export const PROFILE_STATE_PREFIX = "suc-khoe-y-te:profile-state:v1:";
 export const PROFILE_MIGRATION_KEY = "suc-khoe-y-te:profiles:migration:v1";
+export const HEALTH_PROFILE_REGISTRY_CHANGED_EVENT = "health-profile-registry-changed";
 const MAX_PROFILES = 12;
 
 function profileStateKey(profileId: string) {
@@ -72,6 +73,13 @@ function readJson(key: string) {
   }
 }
 
+function emitRegistryChanged(registry: HealthProfileRegistry) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(HEALTH_PROFILE_REGISTRY_CHANGED_EVENT, {
+    detail: { activeProfileId: registry.activeProfileId, updatedAt: registry.updatedAt },
+  }));
+}
+
 function identityFromState(id: string, state: HealthLocalState, now: string): HealthProfileIdentity {
   return {
     id,
@@ -119,7 +127,9 @@ export function saveHealthProfileRegistry(registry: HealthProfileRegistry) {
   if (typeof window === "undefined") return;
   const normalized = normalizeRegistry(registry);
   if (!normalized) return;
-  writeJson(PROFILE_REGISTRY_KEY, { ...normalized, updatedAt: new Date().toISOString() });
+  const saved = { ...normalized, updatedAt: new Date().toISOString() };
+  writeJson(PROFILE_REGISTRY_KEY, saved);
+  emitRegistryChanged(saved);
 }
 
 export function loadHealthProfileState(profileId: string, identity?: HealthProfileIdentity): HealthLocalState {
