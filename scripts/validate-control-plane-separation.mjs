@@ -12,9 +12,10 @@ const [controlAuth, wrangler, deploy] = await Promise.all([
 
 const requiredControlMarkers = [
   "HEALTH_CONTROL_SERVICE_SECRET",
-  "child-health-control",
-  'app !== "child-health"',
-  'https://learning-management.boiech-ai.workers.dev',
+  'const TOKEN_ISSUER = "application-management"',
+  'const TOKEN_AUDIENCE = "health-care-control"',
+  'const TOKEN_APP = "health-care"',
+  '.chatgpt.site',
   "HEALTH_CONTROL_SECRET_UNCONFIGURED",
 ];
 
@@ -27,6 +28,7 @@ for (const marker of requiredControlMarkers) {
 const forbiddenControlPatterns = [
   /values\.CONTROL_SERVICE_SECRET/,
   /legacy-global/,
+  /https:\/\/learning-management\.boiech-ai\.workers\.dev/,
   /from\s+["'][^"']*(?:BOIECH_AI|Application-Management|boi-ech|quan-ly-hoc-tap)/i,
   /require\([^)]*(?:BOIECH_AI|Application-Management|boi-ech|quan-ly-hoc-tap)/i,
 ];

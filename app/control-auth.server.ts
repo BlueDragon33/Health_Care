@@ -1,8 +1,11 @@
 import { DeviceAccessError } from "./device-auth.server";
 
-const CONTROL_CENTER_ORIGIN = "https://learning-management.boiech-ai.workers.dev";
-const TOKEN_AUDIENCE = "child-health-control";
-const TOKEN_ISSUER = "quan-ly-hoc-tap";
+const TOKEN_ISSUER = "application-management";
+const TOKEN_AUDIENCE = "health-care-control";
+const TOKEN_APP = "health-care";
+const LEGACY_TOKEN_ISSUER = "quan-ly-hoc-tap";
+const LEGACY_TOKEN_AUDIENCE = "child-health-control";
+const LEGACY_TOKEN_APP = "child-health";
 const MAX_CONTROL_BEARER_LENGTH = 8192;
 
 export type ControlSecretScope = "health" | "unconfigured";
@@ -70,6 +73,16 @@ async function signature(secret: string, value: string) {
   return base64Url(new Uint8Array(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(value))));
 }
 
+function acceptedControlIdentity(payload: Record<string, unknown>) {
+  const canonical = payload.iss === TOKEN_ISSUER
+    && payload.aud === TOKEN_AUDIENCE
+    && payload.app === TOKEN_APP;
+  const legacy = payload.iss === LEGACY_TOKEN_ISSUER
+    && payload.aud === LEGACY_TOKEN_AUDIENCE
+    && (payload.app === LEGACY_TOKEN_APP || payload.app === undefined);
+  return canonical || legacy;
+}
+
 async function browserTicket(secret: string, supplied: string): Promise<ControlServiceIdentity | null> {
   const [version, encoded, suppliedSignature, extra] = supplied.split(".");
   if (version !== "v1" || !encoded || !suppliedSignature || extra) return null;
@@ -87,21 +100,20 @@ async function browserTicket(secret: string, supplied: string): Promise<ControlS
   const suppliedRole = typeof payload.role === "string" ? payload.role : "viewer";
   const role = ["viewer", "reviewer", "publisher", "owner"].includes(suppliedRole) ? suppliedRole : "viewer";
   const expiresAt = typeof payload.exp === "number" ? payload.exp : 0;
+  const issuedAt = typeof payload.iat === "number" ? payload.iat : 0;
   const controlDeviceId = typeof payload.controlDeviceId === "string" && /^[a-f0-9]{64}$/.test(payload.controlDeviceId)
     ? payload.controlDeviceId
     : null;
   const ticketId = typeof payload.jti === "string" && /^[A-Za-z0-9_-]{16,100}$/.test(payload.jti)
     ? payload.jti
     : null;
-  const app = typeof payload.app === "string" ? payload.app : "child-health";
 
   if (
-    payload.iss !== TOKEN_ISSUER
-    || payload.aud !== TOKEN_AUDIENCE
-    || app !== "child-health"
+    !acceptedControlIdentity(payload)
     || !actor.includes("@")
     || expiresAt <= Date.now()
     || expiresAt > Date.now() + 10 * 60 * 1000
+    || (issuedAt > 0 && issuedAt > Date.now() + 60_000)
   ) return null;
 
   return { actor, role, controlDeviceId, ticketId };
@@ -111,7 +123,7 @@ export async function requireControlService(request: Request): Promise<ControlSe
   const { secret: configured } = await controlSecretConfig();
   if (configured.length < 32) {
     throw new DeviceAccessError(
-      "Control Plane Sức khỏe Y tế chưa được cấu hình secret riêng.",
+      "Control Plane Sức khỏe Y tế chưa được cấu hình khóa kết nối trong ChatGPT Sites.",
       503,
       "HEALTH_CONTROL_SECRET_UNCONFIGURED",
     );
@@ -143,9 +155,22 @@ export async function requireControlService(request: Request): Promise<ControlSe
   };
 }
 
+function isAllowedControlOrigin(origin: string) {
+  if (!origin) return false;
+  if (origin === "http://localhost:3000" || origin === "http://localhost:5173") return true;
+  try {
+    const url = new URL(origin);
+    return url.protocol === "https:"
+      && (url.hostname === "chatgpt.site" || url.hostname.endsWith(".chatgpt.site"));
+  } catch {
+    return false;
+  }
+}
+
 function corsHeaders(request: Request): Record<string, string> {
-  return request.headers.get("origin") === CONTROL_CENTER_ORIGIN ? {
-    "access-control-allow-origin": CONTROL_CENTER_ORIGIN,
+  const origin = request.headers.get("origin") ?? "";
+  return isAllowedControlOrigin(origin) ? {
+    "access-control-allow-origin": origin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "authorization, content-type",
     "access-control-max-age": "600",
@@ -166,7 +191,8 @@ export function controlResponse(data: unknown, status = 200, request?: Request) 
 }
 
 export function controlPreflight(request: Request) {
-  if (request.headers.get("origin") !== CONTROL_CENTER_ORIGIN) return new Response(null, { status: 403 });
+  const origin = request.headers.get("origin") ?? "";
+  if (!isAllowedControlOrigin(origin)) return new Response(null, { status: 403 });
   return new Response(null, { status: 204, headers: corsHeaders(request) });
 }
 
