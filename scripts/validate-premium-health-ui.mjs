@@ -7,26 +7,32 @@ const v8Styles = fs.readFileSync("app/suc-khoe-tre/reference-dashboard-v8.css", 
 const page = fs.readFileSync("app/suc-khoe-tre/page.tsx", "utf8");
 
 function need(source, token, label) {
-  if (!source.includes(token)) throw new Error(`Premium Health UI V1 thiếu ${label}: ${token}`);
+  if (!source.includes(token)) throw new Error(`Premium Health UI thiếu ${label}: ${token}`);
 }
 
 for (const token of [
   'import PremiumQuickActions from "./premium-quick-actions"',
   'Health Care · Vì một thế hệ khỏe mạnh hơn',
   'Những thói quen nhỏ hôm nay tạo nên một phiên bản khỏe mạnh hơn của ngày mai.',
-  '<PremiumQuickActions onNavigate={(target) => setActive(target)} />',
+  '<PremiumQuickActions stage={profileAge.lifeStage} onNavigate={(target) => setActive(target)} />',
 ]) need(framework, token, "dashboard integration");
 
 for (const token of [
+  'import type { HealthLifeStage } from "./health-age-scope"',
   '"nutrition" | "activity" | "care" | "journal" | "growth" | "profile"',
-  'title: "Ghi bữa ăn"',
-  'title: "Ghi vận động"',
+  'stage?.id === "infant-9-11m" || stage?.id === "toddler-12-23m"',
+  'stage?.id === "early-childhood-2-5y"',
+  'infant ? "Ghi bú / ăn" : "Ghi bữa ăn"',
+  'infant || earlyChildhood ? "Ghi chơi / vận động" : "Ghi vận động"',
   'title: "Ghi giấc ngủ"',
-  'title: "Ghi triệu chứng"',
-  'title: "Ghi chiều cao / cân nặng"',
-  'title: "Thêm nhắc nhở"',
-  'aria-label="Thao tác nhanh"',
-]) need(quick, token, "six quick actions");
+  'infant ? "Ghi dấu hiệu" : "Ghi triệu chứng"',
+  'infant ? "Ghi chiều dài / cân nặng" : "Ghi chiều cao / cân nặng"',
+  'infant ? "Thêm nhắc chăm sóc" : "Thêm nhắc nhở"',
+  'aria-label="Thao tác nhanh theo giai đoạn tuổi"',
+  'agePresentationOnly: true',
+  'noHealthDataTransport: true',
+  'noDiagnosisOrTreatmentGeneration: true',
+]) need(quick, token, "six age-aware quick actions");
 
 for (const token of [
   ".hf-sidebar{",
@@ -84,7 +90,10 @@ if (v2Index >= 0) {
 if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET|healthData/i.test(quick)) {
   throw new Error("Quick Actions chỉ được điều hướng UI, không được gọi Control Plane hoặc xử lý dữ liệu sức khỏe");
 }
+for (const forbidden of ["diagnose(", "recommendTreatment", "calculateDose", "healthScore"]) {
+  if (quick.includes(forbidden)) throw new Error(`Quick Actions không được sinh logic lâm sàng: ${forbidden}`);
+}
 
 if (!styles.includes(".hf-bottom-nav{display:grid}")) throw new Error("Mobile phải giữ bottom navigation khi sidebar ẩn");
 
-console.log("Premium Health UI V1/V8 PASS: responsive short-laptop, tablet and mobile refinements are ordered without changing health/control-plane boundaries.");
+console.log("Premium Health UI V16 PASS: six quick actions adapt wording from 9 months through 18 years while preserving responsive/3D UI and health/control-plane boundaries.");
