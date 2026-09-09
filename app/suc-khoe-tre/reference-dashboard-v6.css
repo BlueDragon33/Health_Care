@@ -1,0 +1,74 @@
+/* V6 visual-density refinement for the reference Today dashboard.
+   This layer is presentation-only: no health logic, device policy, storage, or control-plane behavior changes. */
+
+/* One message card in the hero is enough. V4 also generated a decorative quote through ::after. */
+.hf-topbar>div:first-child::after{display:none!important;content:none!important}
+
+/* Pull the first screen upward so the dashboard, not only the hero, is visible on common laptop heights. */
+.hf-topbar{min-height:248px!important;padding-top:42px!important;padding-bottom:26px!important}
+.hf-topbar>div:first-child{padding-top:16px!important}
+.hf-topbar h1{font-size:clamp(38px,3.15vw,50px)!important;line-height:1.01!important}
+.hf-topbar>div:first-child>small{max-width:500px!important;margin-top:8px!important;padding:10px 14px!important;border-radius:13px!important}
+.premium-hero-art{height:244px!important;bottom:-10px!important}
+
+/* Device state remains visible but secondary to profile cards and health content. */
+.hf-top-status{top:78px!important;right:24px!important;max-width:185px!important;padding:8px 10px!important;border-radius:12px!important;font-size:9px!important;line-height:1.25!important;box-shadow:0 8px 22px rgba(58,101,141,.11)!important}
+
+/* Make the six primary actions a compact command ribbon. */
+.premium-quick-actions{margin:8px auto 10px!important;padding:8px!important;gap:8px!important;border-radius:18px!important}
+.premium-quick-action{min-height:70px!important;padding:7px 8px!important;border-radius:14px!important}
+.premium-quick-icon{width:34px!important;height:34px!important;border-radius:11px!important}
+.premium-quick-icon svg{width:21px!important;height:21px!important}
+.premium-quick-copy strong{font-size:9px!important}
+
+.reference-today-dashboard{gap:9px!important}
+.ref-age-scope{grid-template-columns:220px minmax(0,1fr)!important;gap:10px!important;padding:9px 12px!important;border-radius:16px!important}
+.ref-age-scope-copy>strong{font-size:13px!important}.ref-age-scope-copy>small{font-size:8px!important}
+.ref-age-stage-row{gap:5px!important}.ref-age-stage-row button{min-height:28px!important;padding:6px 8px!important;font-size:8px!important;border-radius:9px!important}
+
+/* Balance the three dashboard columns. */
+.ref-dashboard-grid{gap:9px!important;align-items:start!important}
+.ref-card{border-radius:16px!important}
+.ref-attention-card,.ref-growth-card,.ref-recent-card,.ref-timeline-card,.ref-quote-card{padding:11px!important}
+.ref-card-head{margin-bottom:8px!important}.ref-card-head h3{font-size:13px!important}.ref-card-icon{width:26px!important;height:26px!important;border-radius:8px!important}
+.ref-week-summary,.ref-reminders-card{padding:10px!important}
+.ref-summary-bars{gap:5px!important}.ref-summary-bars article{grid-template-columns:64px 1fr 26px!important;gap:5px!important;font-size:7px!important}.ref-summary-bars article>div{height:7px!important}.ref-week-summary>small{margin-top:6px!important}
+.ref-reminder-list{gap:4px!important}.ref-reminder-list article{grid-template-columns:24px 1fr!important;gap:6px!important;padding:5px 6px!important;border-radius:9px!important}.ref-reminder-icon{width:24px!important;height:24px!important;border-radius:8px!important;font-size:15px!important}
+.ref-attention-list{gap:5px!important}.ref-attention-list article{padding:7px 8px!important;border-radius:10px!important}.ref-completeness{margin-top:7px!important}
+
+.ref-growth-metrics article{padding:8px!important}.ref-growth-metrics article>strong{font-size:17px!important}.ref-mini-chart{height:38px!important;margin-top:3px!important}.ref-growth-card footer{margin-top:5px!important;padding-top:6px!important}
+
+.ref-recent-list,.ref-timeline-list{gap:4px!important}.ref-recent-list article{padding:5px!important}.ref-timeline-filter{margin-bottom:7px!important}.ref-timeline-list article{min-height:32px!important}
+.ref-quote-card{min-height:125px!important}
+
+/* On desktop, promote the two cards inside the right stack into the parent grid.
+   This removes the empty band that appeared under Attention/Growth when the stack set row-1 height. */
+@media(min-width:901px){
+  .ref-dashboard-grid{grid-template-areas:"attention growth week" "recent timeline reminders" ". . quote"!important}
+  .ref-right-stack{display:contents!important}
+  .ref-week-summary{grid-area:week!important}
+  .ref-reminders-card{grid-area:reminders!important}
+  .ref-quote-card{grid-area:quote!important}
+}
+
+/* Keep the refinement responsive instead of shrinking desktop values blindly. */
+@media(max-width:1120px){
+  .hf-topbar{min-height:236px!important}
+  .hf-top-status{top:72px!important;right:18px!important}
+  .premium-quick-action{min-height:68px!important}
+  .ref-age-scope{grid-template-columns:190px minmax(0,1fr)!important}
+}
+@media(max-width:900px){
+  .hf-topbar{min-height:250px!important;padding-top:38px!important}
+  .hf-top-status{position:relative!important;top:auto!important;right:auto!important;max-width:none!important;margin-top:10px!important;width:max-content!important}
+  .ref-dashboard-grid{align-items:stretch!important}
+  .ref-right-stack{display:grid!important;gap:7px!important}
+}
+@media(max-width:620px){
+  .hf-topbar{min-height:225px!important;padding-top:30px!important;padding-bottom:22px!important}
+  .premium-quick-action{min-height:66px!important}
+  .ref-age-scope{padding:9px 10px!important}
+}
+@media(prefers-reduced-motion:reduce){
+  .premium-quick-action,.ref-age-stage-row button,.ref-range-tabs button{transition:none!important}
+}
