@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 type EarlyTopic = "overview" | "nutrition" | "sleep" | "development" | "illness" | "safety" | "sex-care";
 type Sex = "male" | "female" | "";
@@ -40,17 +40,10 @@ export default function EarlyChildhoodGuide({ ageMonths, sex }: { ageMonths: num
   const clampedAge = Math.max(9, Math.min(71, ageMonths ?? 9));
   const band = useMemo(() => ageBand(clampedAge), [clampedAge]);
   const [topic, setTopic] = useState<EarlyTopic>("overview");
-  const [milestone, setMilestone] = useState(() => nearestMilestone(clampedAge));
-  const [viewSex, setViewSex] = useState<"male" | "female">(sex === "female" ? "female" : "male");
-
-  useEffect(() => {
-    setMilestone(nearestMilestone(clampedAge));
-  }, [clampedAge]);
-
-  useEffect(() => {
-    if (sex === "male" || sex === "female") setViewSex(sex);
-  }, [sex]);
-
+  const [milestoneOverride, setMilestoneOverride] = useState<number | null>(null);
+  const [sexOverride, setSexOverride] = useState<"male" | "female" | null>(null);
+  const milestone = milestoneOverride ?? nearestMilestone(clampedAge);
+  const viewSex = sexOverride ?? (sex === "female" ? "female" : "male");
   const currentMilestone = MILESTONES.find((item) => item.months === milestone) ?? MILESTONES[0];
 
   return <section className="ac-early" aria-label="Cẩm nang sức khỏe trẻ 9 tháng đến 5 tuổi">
@@ -60,7 +53,7 @@ export default function EarlyChildhoodGuide({ ageMonths, sex }: { ageMonths: num
     </header>
 
     <div className="ac-topic-tabs" role="tablist" aria-label="Chọn nhóm nội dung trẻ nhỏ">
-      {TOPICS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={topic === item.id} aria-pressed={topic === item.id} className={topic === item.id ? "is-active" : ""} onClick={() => setTopic(item.id)}>{item.label}</button>)}
+      {TOPICS.map((item) => <button key={item.id} type="button" role="tab" aria-selected={topic === item.id} className={topic === item.id ? "is-active" : ""} onClick={() => setTopic(item.id)}>{item.label}</button>)}
     </div>
 
     {topic === "overview" ? <div className="ac-card-grid">
@@ -85,7 +78,7 @@ export default function EarlyChildhoodGuide({ ageMonths, sex }: { ageMonths: num
 
     {topic === "development" ? <div>
       <div className="ac-milestone-tabs" role="tablist" aria-label="Chọn mốc phát triển">
-        {MILESTONES.map((item) => <button key={item.months} type="button" role="tab" aria-selected={milestone === item.months} aria-pressed={milestone === item.months} className={milestone === item.months ? "is-active" : ""} onClick={() => setMilestone(item.months)}>{item.label}</button>)}
+        {MILESTONES.map((item) => <button key={item.months} type="button" role="tab" aria-selected={milestone === item.months} className={milestone === item.months ? "is-active" : ""} onClick={() => setMilestoneOverride(item.months)}>{item.label}</button>)}
       </div>
       <article className="ac-milestone-panel"><span>Mốc đang xem</span><h4>{currentMilestone.label}</h4><ul>{currentMilestone.items.map((item) => <li key={item}>{item}</li>)}</ul><p className="hf-muted">Mốc phát triển là điểm gợi ý để quan sát, không phải bài thi. Mất kỹ năng đã có hoặc chững phát triển rõ cần được trao đổi với nhân viên y tế.</p></article>
     </div> : null}
@@ -105,8 +98,8 @@ export default function EarlyChildhoodGuide({ ageMonths, sex }: { ageMonths: num
 
     {topic === "sex-care" ? <div>
       <div className="ac-sex-tabs" role="tablist" aria-label="Chọn nội dung chăm sóc theo giới tính">
-        <button type="button" role="tab" aria-selected={viewSex === "male"} aria-pressed={viewSex === "male"} className={viewSex === "male" ? "is-active" : ""} onClick={() => setViewSex("male")}>Bé trai</button>
-        <button type="button" role="tab" aria-selected={viewSex === "female"} aria-pressed={viewSex === "female"} className={viewSex === "female" ? "is-active" : ""} onClick={() => setViewSex("female")}>Bé gái</button>
+        <button type="button" role="tab" aria-selected={viewSex === "male"} className={viewSex === "male" ? "is-active" : ""} onClick={() => setSexOverride("male")}>Bé trai</button>
+        <button type="button" role="tab" aria-selected={viewSex === "female"} className={viewSex === "female" ? "is-active" : ""} onClick={() => setSexOverride("female")}>Bé gái</button>
       </div>
       {viewSex === "male" ? <article className="ac-milestone-panel"><h4>Chăm sóc bé trai</h4><ul><li>Nếu chưa cắt bao quy đầu, chỉ rửa bên ngoài; không cố tuột bao quy đầu.</li><li>Khi bao quy đầu tự tuột dễ dàng, hướng dẫn kéo nhẹ, rửa nước rồi đưa da trở lại vị trí.</li><li>Cần đánh giá khi tiểu rất khó, đau/sưng rõ, hoặc bao quy đầu bị kẹt sau khi kéo xuống.</li><li>Nếu một bên bìu luôn trống hoặc có sưng đau cấp tính ở bìu, cần đánh giá y tế.</li></ul></article> : <article className="ac-milestone-panel"><h4>Chăm sóc bé gái</h4><ul><li>Làm sạch nhẹ vùng âm hộ bằng nước; tránh sản phẩm thơm khi đang kích ứng.</li><li>Khi tự đi vệ sinh, dạy lau từ trước ra sau.</li><li>Thay quần áo ướt sớm và ưu tiên quần áo vùng đáy thoáng.</li><li>Cần đánh giá khi tiểu đau, sốt không rõ nguyên nhân, dịch hôi/bất thường, chảy máu hoặc đau kéo dài.</li></ul></article>}
     </div> : null}
