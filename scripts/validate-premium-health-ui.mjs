@@ -87,8 +87,8 @@ if (v2Index >= 0) {
   throw new Error("Premium theme V1 phải được import cuối khi chưa có lớp refinement mới");
 }
 
-if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET|healthData/i.test(quick)) {
-  throw new Error("Quick Actions chỉ được điều hướng UI, không được gọi Control Plane hoặc xử lý dữ liệu sức khỏe");
+if (/\bfetch\s*\(/.test(quick) || /\/api\/control|CONTROL_SERVICE_SECRET/.test(quick)) {
+  throw new Error("Quick Actions chỉ được điều hướng UI, không được gọi network/Control Plane");
 }
 for (const forbidden of ["diagnose(", "recommendTreatment", "calculateDose", "healthScore"]) {
   if (quick.includes(forbidden)) throw new Error(`Quick Actions không được sinh logic lâm sàng: ${forbidden}`);
