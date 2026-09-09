@@ -1,0 +1,57 @@
+name: V12 normalize Journal runtime once
+
+on:
+  push:
+    branches:
+      - feature/journal-life-stage-v12
+
+permissions:
+  contents: write
+
+jobs:
+  normalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/journal-life-stage-v12
+          fetch-depth: 0
+      - name: Normalize duplicated Journal wiring and self-remove
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          p = Path('app/suc-khoe-tre/health-framework.tsx')
+          text = p.read_text()
+
+          import_line = 'import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage";'
+          config_line = '  const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);'
+          obs_line = '  const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage), [profileAge.lifeStage]);'
+          panel_line = '          <JournalStagePanel stage={profileAge.lifeStage} />'
+
+          def keep_one_line(source, line, label):
+              lines = source.splitlines()
+              hits = [i for i, value in enumerate(lines) if value == line]
+              if not hits:
+                  raise SystemExit(f'{label} missing')
+              keep = hits[0]
+              out = [value for i, value in enumerate(lines) if value != line or i == keep]
+              return '\n'.join(out) + ('\n' if source.endswith('\n') else '')
+
+          text = keep_one_line(text, import_line, 'Journal import')
+          text = keep_one_line(text, config_line, 'journalConfig memo')
+          text = keep_one_line(text, obs_line, 'journalObservations memo')
+          text = keep_one_line(text, panel_line, 'JournalStagePanel render')
+
+          for line, label in [(import_line,'import'),(config_line,'config'),(obs_line,'observations'),(panel_line,'panel')]:
+              if text.splitlines().count(line) != 1:
+                  raise SystemExit(f'{label} normalization failed')
+
+          p.write_text(text)
+          PY
+          rm .github/workflows/v12-normalize-journal-runtime-once.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/suc-khoe-tre/health-framework.tsx .github/workflows/v12-normalize-journal-runtime-once.yml
+          git commit -m "Normalize Journal V12 runtime wiring"
+          git push origin HEAD:feature/journal-life-stage-v12
