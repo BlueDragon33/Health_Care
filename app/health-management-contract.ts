@@ -3,7 +3,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   application: "health-care",
   canonicalApplication: "health-care",
   displayName: "Sức khỏe Y tế",
-  contractVersion: 1,
+  contractVersion: 2,
   controlProtocol: "application-management-health-control-v1",
   transport: "chatgpt-sites",
   auth: {
@@ -20,6 +20,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
     devices: "/api/control/devices",
     sessions: "/api/control/sessions",
     policy: "/api/control/policy",
+    automation: "/api/control/automation",
     contentReview: "/api/control/health-content",
     audit: "/api/control/audit",
   },
@@ -30,6 +31,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   },
   capabilities: [
     "device-access",
+    "device-auto-approval",
     "device-edit-permission",
     "device-calendar-permission",
     "session-revocation",
