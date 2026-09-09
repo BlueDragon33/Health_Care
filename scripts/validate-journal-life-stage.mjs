@@ -25,7 +25,7 @@ for (const token of [
   "Khó thở",
   "Lừ đừ / khó đánh thức",
   "Nhật ký chỉ ghi quan sát",
-  "không tự chẩn đoán",
+  "tự chẩn đoán",
   "không thay thế đánh giá chuyên môn",
   "journalObservationOptionsForLifeStage",
   "journalConfigForLifeStage",
