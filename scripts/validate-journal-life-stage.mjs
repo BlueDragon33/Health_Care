@@ -7,6 +7,11 @@ function need(source, token, label) {
   if (!source.includes(token)) throw new Error(`Journal V12 thiếu ${label}: ${token}`);
 }
 
+function exactlyOnce(source, token, label) {
+  const count = source.split(token).length - 1;
+  if (count !== 1) throw new Error(`Journal V12 yêu cầu đúng 1 ${label}, hiện có ${count}: ${token}`);
+}
+
 for (const id of [
   '"infant-9-11m"',
   '"toddler-12-23m"',
@@ -32,15 +37,16 @@ for (const token of [
 ]) need(journal, token, "infant/adolescent journal safety");
 
 const journalImport = 'import JournalStagePanel, { journalConfigForLifeStage, journalObservationOptionsForLifeStage } from "./journal-life-stage"';
-need(framework, journalImport, "runtime import");
-if (framework.split(journalImport).length - 1 !== 1) {
-  throw new Error("Journal V12 phải import JournalStagePanel đúng 1 lần");
-}
+const journalConfigMemo = 'const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage)';
+const journalObservationsMemo = 'const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage)';
+const journalPanel = '<JournalStagePanel stage={profileAge.lifeStage} />';
+
+exactlyOnce(framework, journalImport, "Journal import");
+exactlyOnce(framework, journalConfigMemo, "journalConfig memo");
+exactlyOnce(framework, journalObservationsMemo, "journalObservations memo");
+exactlyOnce(framework, journalPanel, "JournalStagePanel render");
 
 for (const token of [
-  'const journalConfig = useMemo(() => journalConfigForLifeStage(profileAge.lifeStage)',
-  'const journalObservations = useMemo(() => journalObservationOptionsForLifeStage(profileAge.lifeStage)',
-  '<JournalStagePanel stage={profileAge.lifeStage} />',
   'journalObservations.map(',
   '{journalConfig.feelingPrompt}',
 ]) need(framework, token, "runtime integration");
@@ -54,4 +60,4 @@ for (const forbidden of ["/api/control", "CONTROL_SERVICE_SECRET", "diagnose(", 
 }
 if (/\bfetch\s*\(/.test(journal)) throw new Error("Journal life-stage không được gọi network trực tiếp");
 
-console.log("Journal V12 PASS: age-aware observation prompts/options cover 9 months–18 years without diagnosis, treatment generation or control-plane leakage.");
+console.log("Journal V12 PASS: age-aware observation prompts/options cover 9 months–18 years with exactly-one runtime wiring and without diagnosis, treatment generation or control-plane leakage.");
