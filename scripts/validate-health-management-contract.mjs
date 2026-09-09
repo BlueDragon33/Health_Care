@@ -10,20 +10,26 @@ const route = read("app/api/control/contract/route.ts");
 const auth = read("app/control-auth.server.ts");
 const automationRoute = read("app/api/control/automation/route.ts");
 const automationService = read("app/device-automation.server.ts");
+const launchService = read("app/control-web-launch.server.ts");
 const deviceRoute = read("app/api/device/route.ts");
-const migration = read("drizzle/0006_device_automation.sql");
+const deviceGate = read("app/suc-khoe-tre/device-gate.tsx");
+const automationMigration = read("drizzle/0006_device_automation.sql");
+const launchMigration = read("drizzle/0007_control_web_launch.sql");
 
 for (const required of [
   'application: "health-care"',
   'canonicalApplication: "health-care"',
-  'contractVersion: 2',
+  'contractVersion: 3',
   'controlProtocol: "application-management-health-control-v1"',
   'issuer: "application-management"',
   'audience: "health-care-control"',
   'app: "health-care"',
+  'webLaunchTtlSeconds: 60',
   'secretEnv: "HEALTH_CONTROL_SERVICE_SECRET"',
   'namespace: "SK-"',
   '"device-auto-approval"',
+  '"control-web-launch"',
+  'webLaunchTarget: "/suc-khoe-tre"',
   'healthDataInControlPlane: false',
   'profileDataInControlPlane: false',
   'independentRuntime: true',
@@ -47,6 +53,14 @@ if (!/updateHealthDeviceAutomationSettings/.test(automationRoute)) fail("automat
 if (!/autoApproveDevices/.test(automationService) || !/site_device_automation/.test(automationService)) fail("thiếu state duyệt tự động phía Health_Care");
 if (!/site_device_auto_approval_updated/.test(automationService)) fail("đổi duyệt tự động phải ghi audit Health");
 if (!/automation\.autoApproveDevices/.test(deviceRoute)) fail("đăng ký thiết bị phải áp dụng policy duyệt tự động");
-if (!/site_device_automation/.test(migration) || !/DEFAULT 0/.test(migration)) fail("migration phải mặc định fail-closed: không tự duyệt");
+if (!/site_device_automation/.test(automationMigration) || !/DEFAULT 0/.test(automationMigration)) fail("migration phải mặc định fail-closed: không tự duyệt");
 
-console.log("Health management contract PASS: live contract + auto approval + signed identity + privacy boundary OK.");
+if (!/verifyControlWebLaunchTicket/.test(auth) || !/purpose !== "web-launch"/.test(auth)) fail("auth phải tách vé web-launch khỏi vé control thông thường");
+if (!/payload\.purpose === undefined \|\| payload\.purpose === "control"/.test(auth)) fail("control API không được chấp nhận vé web-launch");
+if (!/health_control_web_launch/.test(launchService) || !/CONTROL_WEB_LAUNCH_REPLAY/.test(launchService)) fail("vé web-launch phải có ledger dùng một lần");
+if (!/health_control_web_launch/.test(launchMigration) || !/ticket_id.*PRIMARY KEY/.test(launchMigration)) fail("migration web-launch phải khóa ticket id duy nhất");
+if (!/controlLaunchTicket/.test(deviceRoute) || !/site_device_control_web_launch_approved/.test(deviceRoute)) fail("đăng ký thiết bị phải xác minh và audit control launch");
+if (!/control-launch/.test(deviceGate) || !/clearControlLaunchTicket/.test(deviceGate)) fail("client phải đọc vé từ fragment rồi xóa khỏi thanh địa chỉ");
+if (/controlLaunchTicket.*localStorage/s.test(deviceGate)) fail("không được lưu vé control launch vào localStorage");
+
+console.log("Health management contract PASS: live contract v3 + auto approval + one-time control web launch + privacy boundary OK.");
