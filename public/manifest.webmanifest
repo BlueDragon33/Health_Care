@@ -1,7 +1,7 @@
 {
-  "name": "Sức khỏe Y tế · Trẻ 9–10 tuổi",
+  "name": "Sức khỏe Y tế · 9 tháng–18 tuổi",
   "short_name": "Sức khỏe Y tế",
-  "description": "Web App độc lập theo dõi tăng trưởng, dinh dưỡng, vận động, chăm sóc và sức khỏe học đường cho trẻ 9–10 tuổi.",
+  "description": "Web App độc lập theo dõi sức khỏe, phát triển, dinh dưỡng, vận động, chăm sóc và hồ sơ từ 9 tháng đến hết 18 tuổi.",
   "lang": "vi",
   "start_url": "/suc-khoe-tre",
   "scope": "/",
