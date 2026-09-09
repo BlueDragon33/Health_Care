@@ -16,6 +16,7 @@ import "./chronic-conditions-care-plans.css";
 import "./injury-sports-musculoskeletal.css";
 import "./preventive-care-records.css";
 import "./private-sensitive-notes.css";
+import "./age-content-center.css";
 import "./control-plane.css";
 import "./premium-health-ui.css";
 import "./premium-health-ui-v2.css";
