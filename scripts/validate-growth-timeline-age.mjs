@@ -16,6 +16,7 @@ for (const token of [
   "bảng LMS định lượng 5–8 tuổi chưa được tích hợp/kiểm định trong ứng dụng",
   "ageMonths < 108",
   "ageMonths > 227",
+  'return ageMonths < 24 ? `${ageMonths} tháng` : formatAgeMonths(ageMonths)',
 ]) need(growth, token, "age-at-measurement presentation");
 
 for (const token of [
@@ -43,4 +44,4 @@ for (const forbidden of ["/api/control", "CONTROL_SERVICE_SECRET", "diagnose(", 
 }
 if (/\bfetch\s*\(/.test(growth)) throw new Error("Growth presentation không được gọi network trực tiếp");
 
-console.log("Growth V14 PASS: each historical measurement uses age at its own date; under-9 history avoids unsupported BMI classification; verified LMS scope remains 9y–18y11m.");
+console.log("Growth V14 PASS: each historical measurement uses age at its own date; 9–23 months stays month-formatted; under-9 history avoids unsupported BMI classification; verified LMS scope remains 9y–18y11m.");
