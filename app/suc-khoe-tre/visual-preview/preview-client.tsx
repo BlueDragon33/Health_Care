@@ -6,7 +6,7 @@ import { createDailyRecord, createInitialHealthState, shiftDateKey, todayKey, ty
 import { saveHealthProfileRegistry, saveHealthProfileState } from "../health-profile-registry";
 import type { HealthProfileRegistry } from "../health-profile-contracts";
 
-function seededState(): HealthLocalState {
+function seededTeenState(): HealthLocalState {
   const today = todayKey();
   const state = createInitialHealthState();
   state.profile = { name: "Bảo Anh", birthDate: "2013-07-25", sex: "female", note: "Preview UI" };
@@ -18,23 +18,31 @@ function seededState(): HealthLocalState {
     { id: "g-5", date: shiftDateKey(today, -30), heightCm: 158.0, weightKg: 49.0 },
     { id: "g-6", date: today, heightCm: 158.2, weightKg: 49.1 },
   ];
-  state.reminders = [
-    { id: "r-water", title: "Uống nước", category: "water", date: today, time: "09:30", repeat: "daily", enabled: true },
-    { id: "r-move", title: "Vận động nhẹ", category: "activity", date: today, time: "16:00", repeat: "daily", enabled: true },
-    { id: "r-sleep", title: "Đi ngủ", category: "care", date: today, time: "21:30", repeat: "daily", enabled: true },
+  return state;
+}
+
+function seededInfantState(): HealthLocalState {
+  const today = todayKey();
+  const state = createInitialHealthState();
+  state.profile = { name: "Bé 9 tháng", birthDate: "2025-12-09", sex: "male", note: "Preview infant runtime" };
+  state.growth = [
+    { id: "ig-1", date: shiftDateKey(today, -90), heightCm: 66.2, weightKg: 7.4 },
+    { id: "ig-2", date: shiftDateKey(today, -60), heightCm: 67.8, weightKg: 7.8 },
+    { id: "ig-3", date: shiftDateKey(today, -30), heightCm: 69.1, weightKg: 8.1 },
+    { id: "ig-4", date: today, heightCm: 70.2, weightKg: 8.4 },
   ];
-  for (let offset = -6; offset <= 0; offset += 1) {
+  state.reminders = [
+    { id: "ir-meal", title: "Bữa ăn bổ sung", category: "nutrition", date: today, time: "10:00", repeat: "daily", enabled: true },
+    { id: "ir-sleep", title: "Theo dõi giấc ngủ", category: "care", date: today, time: "20:00", repeat: "daily", enabled: true },
+  ];
+  for (let offset = -3; offset <= 0; offset += 1) {
     const key = shiftDateKey(today, offset);
     const day = createDailyRecord();
-    day.tasks = { breakfast: true, water: true, movement: true, teethMorning: true, teethEvening: true, sleep: true };
-    day.foodGroups = ["Đạm", "Rau", "Trái cây", "Sữa / tương đương", "Ngũ cốc / tinh bột", "Nước"];
-    day.waterCups = 6;
-    day.meals = [{ id: `meal-${offset}`, meal: "breakfast", text: "Phở bò, sữa chua, chuối", createdAt: new Date().toISOString() }];
-    day.activities = [{ id: `act-${offset}`, type: "Chạy", minutes: 35, createdAt: new Date().toISOString() }];
-    day.sleepStart = "21:30";
+    day.foodGroups = ["Đạm", "Rau", "Trái cây", "Ngũ cốc / tinh bột", "Nước"];
+    day.waterCups = 2;
+    day.meals = [{ id: `infant-meal-${offset}`, meal: "lunch", text: "Cháo thịt rau mềm · sữa mẹ/sữa phù hợp", createdAt: new Date().toISOString() }];
+    day.sleepStart = "20:30";
     day.sleepEnd = "06:30";
-    day.eyeBreaks = 4;
-    day.hygieneDone = true;
     day.feeling = "good";
     state.days[key] = day;
   }
@@ -46,22 +54,20 @@ export default function VisualPreviewClient() {
 
   useEffect(() => {
     const now = new Date().toISOString();
-    const primaryId = "preview-bao-anh";
+    const teenId = "preview-bao-anh";
     const infantId = "preview-be-9-thang";
     const registry: HealthProfileRegistry = {
       schemaVersion: 1,
-      activeProfileId: primaryId,
+      activeProfileId: infantId,
       updatedAt: now,
       profiles: [
-        { id: primaryId, displayName: "Bảo Anh", birthDate: "2013-07-25", sexForGrowthReference: "female", createdAt: now, updatedAt: now },
+        { id: teenId, displayName: "Bảo Anh", birthDate: "2013-07-25", sexForGrowthReference: "female", createdAt: now, updatedAt: now },
         { id: infantId, displayName: "Bé 9 tháng", birthDate: "2025-12-09", sexForGrowthReference: "male", createdAt: now, updatedAt: now },
       ],
     };
     saveHealthProfileRegistry(registry);
-    saveHealthProfileState(primaryId, seededState());
-    const infant = createInitialHealthState();
-    infant.profile = { name: "Bé 9 tháng", birthDate: "2025-12-09", sex: "male", note: "" };
-    saveHealthProfileState(infantId, infant);
+    saveHealthProfileState(teenId, seededTeenState());
+    saveHealthProfileState(infantId, seededInfantState());
     setReady(true);
   }, []);
 
