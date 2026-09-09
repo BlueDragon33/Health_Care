@@ -57,13 +57,14 @@ export default function ProfileSwitcher({
     <div className="profile-switcher-list" role="list">
       {registry.profiles.map((profile) => {
         const selected = profile.id === registry.activeProfileId;
+        const age = ageLabel(profile);
         return <article key={profile.id} className={selected ? "is-selected" : ""} role="listitem">
-          <button type="button" className="profile-select" aria-pressed={selected} onClick={() => onSwitch(profile.id)}>
+          <button type="button" className="profile-select" aria-pressed={selected} aria-label={`${profile.displayName} · ${age}${selected ? " · đang theo dõi" : ""}`} onClick={() => onSwitch(profile.id)}>
             <span className="profile-avatar" aria-hidden="true">{initials(profile.displayName)}</span>
             <span className="profile-copy">
-              <span>{selected ? "Đang theo dõi" : ageLabel(profile)}</span>
+              <span>{selected ? "Đang theo dõi" : "Hồ sơ"}</span>
               <strong>{profile.displayName}</strong>
-              <small>{selected ? ageLabel(profile) : "Chạm để chuyển hồ sơ"}</small>
+              <small>{age}</small>
             </span>
           </button>
           {registry.profiles.length > 1 ? <button type="button" className="profile-delete" aria-label={`Xóa hồ sơ ${profile.displayName}`} onClick={() => confirmDelete(profile.id, profile.displayName)}>Xóa</button> : null}
