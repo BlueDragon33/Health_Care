@@ -78,6 +78,7 @@ type LegacyHealthBackupEnvelope = {
   state: HealthLocalState;
 };
 
+/* Keep storage identifiers stable for backward compatibility; the product scope is now 9 months–18 years. */
 export const STORAGE_KEY = "suc-khoe-y-te:9-18:v2";
 export const LEGACY_STORAGE_KEY = "suc-khoe-y-te:9-10:v1";
 export const BACKUP_FORMAT = "suc-khoe-y-te-9-18-backup-v2" as const;
@@ -200,7 +201,8 @@ function safeGrowth(value: unknown): GrowthEntry[] {
     const date = validDateKey(source.date);
     const heightCm = Math.round((Number(source.heightCm) || 0) * 10) / 10;
     const weightKg = Math.round((Number(source.weightKg) || 0) * 10) / 10;
-    if (!date || !(heightCm > 50 && heightCm < 220) || !(weightKg > 10 && weightKg < 200)) return [];
+    /* 9-month children commonly weigh below 10 kg, so the old >10 kg gate silently discarded valid infant data. */
+    if (!date || !(heightCm > 45 && heightCm < 220) || !(weightKg > 3.5 && weightKg < 200)) return [];
     return [{ id: cleanString(source.id, 120) || uid("growth"), date, heightCm, weightKg }];
   });
 }
@@ -272,7 +274,7 @@ export function loadHealthState() {
   const current = readStoredState(STORAGE_KEY);
   if (current) return current;
 
-  // One-way, non-destructive migration: copy old 9–10 data to the new 9–18 key.
+  // One-way, non-destructive migration: copy old 9–10 data to the current storage key.
   // Keep the legacy key untouched so rollback remains possible.
   const legacy = readStoredState(LEGACY_STORAGE_KEY);
   if (legacy) {

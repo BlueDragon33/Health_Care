@@ -1,15 +1,8 @@
 "use client";
 
 import HealthFramework, { type HealthDeviceAccess } from "./health-framework";
-import HealthFrameworkMap from "./health-framework-map";
-import AgeContentCenter from "./age-content-center";
 
 export default function HealthClient({ initialCourse, device }: { initialCourse: unknown; device: HealthDeviceAccess }) {
-  return <>
-    <HealthFrameworkMap />
-    <div className="ac-shell-dock">
-      <AgeContentCenter />
-    </div>
-    <HealthFramework initialCourse={initialCourse} device={device} />
-  </>;
+  // AgeContentCenter is nested inside Today; the engineering maturity map remains a source file/validator aid and is not an end-user dashboard block.
+  return <HealthFramework initialCourse={initialCourse} device={device} />;
 }
