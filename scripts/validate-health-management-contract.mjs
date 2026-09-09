@@ -58,9 +58,13 @@ if (!/site_device_automation/.test(automationMigration) || !/DEFAULT 0/.test(aut
 if (!/verifyControlWebLaunchTicket/.test(auth) || !/purpose !== "web-launch"/.test(auth)) fail("auth phải tách vé web-launch khỏi vé control thông thường");
 if (!/payload\.purpose === undefined \|\| payload\.purpose === "control"/.test(auth)) fail("control API không được chấp nhận vé web-launch");
 if (!/health_control_web_launch/.test(launchService) || !/CONTROL_WEB_LAUNCH_REPLAY/.test(launchService)) fail("vé web-launch phải có ledger dùng một lần");
+if (!/WHERE device_id = \? AND status = 'pending'/.test(launchService)) fail("web-launch chỉ được nâng thiết bị pending, không được tự mở khóa blocked");
+if (!/current\.status === "blocked"/.test(launchService) || !/DEVICE_BLOCKED/.test(launchService)) fail("web-launch phải chặn thiết bị đã bị khóa");
 if (!/health_control_web_launch/.test(launchMigration) || !/ticket_id.*PRIMARY KEY/.test(launchMigration)) fail("migration web-launch phải khóa ticket id duy nhất");
 if (!/controlLaunchTicket/.test(deviceRoute) || !/site_device_control_web_launch_approved/.test(deviceRoute)) fail("đăng ký thiết bị phải xác minh và audit control launch");
+if (!/promoteHealthControlWebLaunchDevice/.test(deviceRoute)) fail("đăng ký phải nâng cả thiết bị pending đã tồn tại khi mở từ control-plane");
+if (!/device\.status !== "approved"/.test(deviceRoute)) fail("sau khi nâng pending phải đọc lại trạng thái approved trước khi trả client");
 if (!/control-launch/.test(deviceGate) || !/clearControlLaunchTicket/.test(deviceGate)) fail("client phải đọc vé từ fragment rồi xóa khỏi thanh địa chỉ");
 if (/controlLaunchTicket.*localStorage/s.test(deviceGate)) fail("không được lưu vé control launch vào localStorage");
 
-console.log("Health management contract PASS: live contract v3 + auto approval + one-time control web launch + privacy boundary OK.");
+console.log("Health management contract PASS: live contract v3 + auto approval + one-time control web launch + pending promotion + blocked guard + privacy boundary OK.");
