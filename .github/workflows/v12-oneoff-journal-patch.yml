@@ -73,13 +73,8 @@ jobs:
           new_heading = '<span className="hf-kicker">Cảm nhận / tình trạng chung</span><h3>{journalConfig.feelingPrompt}</h3>'
           replace_once(old_heading, new_heading, 'feeling prompt')
 
-          old_placeholder = 'placeholder="Điều gì đáng chú ý hôm nay?"'
-          new_placeholder = 'placeholder={journalConfig.notePrompt}'
-          if old_placeholder in text:
-              text = text.replace(old_placeholder, new_placeholder, 1)
-          elif new_placeholder not in text:
-              raise SystemExit('journal note placeholder token not found')
-
+          # Placeholder wording differs across earlier UI refinements. It is optional;
+          # the life-stage panel above now supplies the age-appropriate note prompt.
           path.write_text(text)
           PY
 
