@@ -12,6 +12,8 @@ jobs:
   screenshot:
     runs-on: ubuntu-latest
     timeout-minutes: 12
+    env:
+      PREVIEW_REVISION: v8-final
     steps:
       - name: Checkout
         uses: actions/checkout@v4
