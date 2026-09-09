@@ -96,7 +96,7 @@ async function register(credential: Credential) {
 async function proof(credential: Credential, device: EditorDevice) {
   const data = await api("/api/editor/device", { action: "challenge", deviceId: device.deviceId });
   if (!data.challenge || !credential.privateKey) throw new ApiError("Không thể xác thực laptop.", data);
-  const message = new TextEncoder().encode(`boi-ech-editor:${device.deviceId}:${data.challenge}`);
+  const message = new TextEncoder().encode(`health-care-editor:${device.deviceId}:${data.challenge}`);
   const signature = await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, credential.privateKey, message);
   return { deviceId: device.deviceId, challenge: data.challenge, signature: base64Url(new Uint8Array(signature)) };
 }
