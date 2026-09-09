@@ -1,10 +1,17 @@
 import type { HealthLifeStage } from "./health-age-scope";
+import { formatAgeMonths } from "./who-bmi-reference";
 
 export type GrowthStageConfig = {
   statureLabel: string;
   staturePlaceholder: string;
   weightPlaceholder: string;
   measurementHint: string;
+};
+
+export type GrowthTimelinePresentation = {
+  metricLabel: string;
+  detail: string;
+  useWhoBmiReference: boolean;
 };
 
 const DEFAULT_GROWTH_STAGE: GrowthStageConfig = {
@@ -40,6 +47,10 @@ const GROWTH_STAGE_CONFIG: Record<string, GrowthStageConfig> = {
   "late-adolescent": DEFAULT_GROWTH_STAGE,
 };
 
+function growthAgeText(ageMonths: number) {
+  return ageMonths < 24 ? `${ageMonths} tháng` : formatAgeMonths(ageMonths);
+}
+
 export function growthConfigForLifeStage(stage: HealthLifeStage | null): GrowthStageConfig {
   if (!stage) return DEFAULT_GROWTH_STAGE;
   return GROWTH_STAGE_CONFIG[stage.id] ?? DEFAULT_GROWTH_STAGE;
@@ -54,9 +65,65 @@ export function growthSummaryMetric(ageMonths: number | null, bmi: number | null
     };
   }
 
+  if (ageMonths !== null && ageMonths < 108) {
+    return {
+      value: "5–8",
+      label: "Theo dõi số đo",
+      detail: "WHO Reference 2007 có phạm vi 5–19 tuổi, nhưng bảng LMS đã kiểm định trong ứng dụng hiện mới tích hợp từ 9 tuổi. Nhóm 5–8 tuổi chỉ hiển thị xu hướng số đo, không tự nội suy BMI-for-age.",
+    };
+  }
+
   return {
     value: bmi === null ? "—" : bmi.toFixed(1),
     label: "BMI",
-    detail: "BMI chỉ được diễn giải theo tuổi và giới khi hồ sơ nằm trong phạm vi WHO 5–19 của ứng dụng.",
+    detail: "BMI chỉ được diễn giải theo tuổi và giới khi mốc đo nằm trong bảng WHO 2007 đã tích hợp của ứng dụng (9 tuổi đến hết 18 tuổi).",
+  };
+}
+
+export function growthTimelinePresentation(ageMonths: number | null, bmi: number | null): GrowthTimelinePresentation {
+  if (ageMonths === null) {
+    return {
+      metricLabel: "Tuổi chưa xác định",
+      detail: "Cần ngày sinh hợp lệ để xác định tuổi tại chính ngày đo.",
+      useWhoBmiReference: false,
+    };
+  }
+
+  if (ageMonths < 24) {
+    return {
+      metricLabel: "Chiều dài / cân nặng",
+      detail: `${growthAgeText(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
+      useWhoBmiReference: false,
+    };
+  }
+
+  if (ageMonths < 60) {
+    return {
+      metricLabel: "Chiều cao / cân nặng",
+      detail: `${growthAgeText(ageMonths)} · WHO 0–5 · không phân loại bằng BMI-for-age 5–19`,
+      useWhoBmiReference: false,
+    };
+  }
+
+  if (ageMonths < 108) {
+    return {
+      metricLabel: "Chiều cao / cân nặng",
+      detail: `${growthAgeText(ageMonths)} · chỉ theo dõi xu hướng; bảng LMS định lượng 5–8 tuổi chưa được tích hợp/kiểm định trong ứng dụng`,
+      useWhoBmiReference: false,
+    };
+  }
+
+  if (ageMonths > 227) {
+    return {
+      metricLabel: "Chiều cao / cân nặng",
+      detail: `${growthAgeText(ageMonths)} · ngoài phạm vi sản phẩm đến hết 18 tuổi 11 tháng`,
+      useWhoBmiReference: false,
+    };
+  }
+
+  return {
+    metricLabel: `BMI ${bmi === null ? "—" : bmi.toFixed(1)}`,
+    detail: `${growthAgeText(ageMonths)} · WHO BMI-for-age 2007`,
+    useWhoBmiReference: true,
   };
 }
