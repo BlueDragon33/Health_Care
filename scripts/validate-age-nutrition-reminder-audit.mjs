@@ -11,20 +11,46 @@ function requireToken(source, token, label) {
   if (!source.includes(token)) throw new Error(`Core health audit thiếu ${label}: ${token}`);
 }
 
-// 1) Chế độ dinh dưỡng theo 4 giai đoạn tuổi.
+// 1) Chế độ dinh dưỡng liên tục theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi.
 for (const token of [
+  '"infant-9-11m":',
+  '"toddler-12-23m":',
+  '"early-childhood-2-5y":',
+  '"school-age-6-8y":',
   'foundation:',
   'preteen:',
   '"early-adolescent":',
   '"late-adolescent":',
+  "HealthLifeStageId",
+  "9–11 tháng · Ăn bổ sung an toàn, tăng dần độ thô",
+  "Không dùng mật ong trước 12 tháng",
   "Dinh dưỡng theo nhóm tuổi",
   "WHO Healthy diet (cập nhật 26/01/2026)",
   "Dấu ✓ chỉ phản ánh dữ liệu đã ghi",
-  "Không áp chế độ giảm cân",
-]) requireToken(nutrition, token, "dinh dưỡng theo tuổi");
+]) requireToken(nutrition, token, "dinh dưỡng 9 tháng–18 tuổi");
+
+for (const token of [
+  'if (stageId === "infant-9-11m")',
+  'id: "complementary-meal"',
+  'label: "Đã ghi từ 3 nhóm thực phẩm"',
+  'if (stageId === "toddler-12-23m")',
+  'if (stageId === "early-childhood-2-5y")',
+  'if (stageId === "school-age-6-8y" || stageId === "foundation")',
+]) requireToken(nutrition, token, "checklist dinh dưỡng theo giai đoạn");
+
+// Không được dùng checklist nước/bữa sáng của trẻ lớn làm điều kiện riêng cho 9–11 tháng.
+const infantBlock = nutrition.slice(nutrition.indexOf('if (stageId === "infant-9-11m")'), nutrition.indexOf('if (stageId === "toddler-12-23m")'));
+if (infantBlock.includes('id: "water"') || infantBlock.includes('id: "breakfast"')) {
+  throw new Error("Checklist 9–11 tháng không được tái sử dụng điều kiện nước/bữa sáng của trẻ lớn");
+}
 
 requireToken(framework, 'import NutritionStagePanel from "./nutrition-stage-panel"', "tích hợp nutrition stage");
-requireToken(framework, '<NutritionStagePanel stage={profileAge.stage} day={day} />', "render nutrition stage");
+requireToken(framework, 'type HealthLifeStage', "life-stage runtime type");
+requireToken(framework, '<NutritionStagePanel stage={profileAge.lifeStage} day={day} />', "render nutrition life stage");
+requireToken(framework, 'nội dung được cá nhân hóa liên tục theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi', "copy phạm vi nutrition");
+if (framework.includes('<NutritionStagePanel stage={profileAge.stage} day={day} />')) {
+  throw new Error("Nutrition không được quay lại profileAge.stage chỉ dành cho 9–18 tuổi");
+}
 
 // 2) Checklist và nhật ký dinh dưỡng/sức khỏe.
 for (const token of ["Checklist", "Nhật ký bữa ăn", "Ghi món đã ăn", 'active === "journal"', "journalNote"]) {
@@ -61,4 +87,4 @@ for (const token of [
   'function canManage(role: string) { return ["publisher", "owner"].includes(role); }',
 ]) requireToken(devices, token, "Calendar control-plane gate");
 
-console.log("Core health features PASS: age nutrition, checklist/journal, recurring reminders, browser notifications, ICS and admin-gated Google Calendar are enforced.");
+console.log("Core health features PASS: continuous 9m–18y nutrition, stage checklists, journal, recurring reminders, browser notifications, ICS and admin-gated Google Calendar are enforced.");
