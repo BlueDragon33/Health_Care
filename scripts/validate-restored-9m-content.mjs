@@ -28,7 +28,6 @@ for (const token of [
   '9 tháng → 18 tuổi · một lộ trình liên tục',
   'role="tablist"',
   'aria-selected={selectedId === stage.id}',
-  'aria-pressed={selectedId === stage.id}',
   'className={selectedId === stage.id ? "is-active" : ""}',
   '<EarlyChildhoodGuide',
 ]) need(center, token, "active stage selector");
@@ -49,8 +48,12 @@ for (const token of [
   '3 tuổi',
   '4 tuổi',
   '5 tuổi',
-  'aria-pressed={topic === item.id}',
-  'aria-pressed={milestone === item.months}',
+  'aria-selected={topic === item.id}',
+  'aria-selected={milestone === item.months}',
+  'aria-selected={viewSex === "male"}',
+  'aria-selected={viewSex === "female"}',
+  'className={topic === item.id ? "is-active" : ""}',
+  'className={milestone === item.months ? "is-active" : ""}',
 ]) need(early, token, "nội dung trẻ nhỏ / trạng thái chọn");
 
 for (const forbidden of [
@@ -59,8 +62,9 @@ for (const forbidden of [
   "diagnose(",
   "calculateDose",
   "recommendTreatment",
+  "aria-pressed=",
 ]) {
-  if (early.includes(forbidden) || center.includes(forbidden)) throw new Error(`Nội dung theo tuổi không được chứa control/clinical generation: ${forbidden}`);
+  if (early.includes(forbidden) || center.includes(forbidden)) throw new Error(`Nội dung theo tuổi không được chứa control/clinical generation/a11y conflict: ${forbidden}`);
 }
 if (/\bfetch\s*\(/.test(early) || /\bfetch\s*\(/.test(center)) throw new Error("Age content không được gọi network trực tiếp");
 
