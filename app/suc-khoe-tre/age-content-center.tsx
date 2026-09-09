@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import EarlyChildhoodGuide from "./early-childhood-guide";
 import { HEALTH_LIFE_STAGES, type HealthLifeStageId } from "./health-age-scope";
+import { loadHealthProfileRegistry } from "./health-profile-registry";
+import { todayKey } from "./health-local-store";
+import { completedAgeMonths } from "./who-bmi-reference";
 
 const STAGE_NOTES: Partial<Record<HealthLifeStageId, readonly string[]>> = {
   "school-age-6-8y": [
@@ -34,9 +37,30 @@ const STAGE_NOTES: Partial<Record<HealthLifeStageId, readonly string[]>> = {
   ],
 };
 
-export default function AgeContentCenter({ ageMonths, sex }: { ageMonths: number | null; sex: "male" | "female" | "" }) {
-  const current = useMemo(() => HEALTH_LIFE_STAGES.find((stage) => ageMonths !== null && ageMonths >= stage.minMonths && ageMonths <= stage.maxMonths) ?? null, [ageMonths]);
-  const [selectedId, setSelectedId] = useState<HealthLifeStageId>(current?.id ?? "infant-9-11m");
+type Sex = "male" | "female" | "";
+
+export default function AgeContentCenter({ ageMonths: suppliedAgeMonths, sex: suppliedSex }: { ageMonths?: number | null; sex?: Sex }) {
+  const [profileAgeMonths, setProfileAgeMonths] = useState<number | null>(suppliedAgeMonths ?? null);
+  const [profileSex, setProfileSex] = useState<Sex>(suppliedSex ?? "");
+
+  useEffect(() => {
+    if (suppliedAgeMonths !== undefined || suppliedSex !== undefined) {
+      setProfileAgeMonths(suppliedAgeMonths ?? null);
+      setProfileSex(suppliedSex ?? "");
+      return;
+    }
+    const timer = window.setTimeout(() => {
+      const registry = loadHealthProfileRegistry();
+      const activeId = registry.activeProfileId ?? registry.profiles[0]?.id;
+      const identity = registry.profiles.find((item) => item.id === activeId);
+      setProfileAgeMonths(identity?.birthDate ? completedAgeMonths(identity.birthDate, todayKey()) : null);
+      setProfileSex(identity?.sexForGrowthReference ?? "");
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [suppliedAgeMonths, suppliedSex]);
+
+  const current = useMemo(() => HEALTH_LIFE_STAGES.find((stage) => profileAgeMonths !== null && profileAgeMonths >= stage.minMonths && profileAgeMonths <= stage.maxMonths) ?? null, [profileAgeMonths]);
+  const [selectedId, setSelectedId] = useState<HealthLifeStageId>("infant-9-11m");
 
   useEffect(() => {
     if (current) setSelectedId(current.id);
@@ -60,7 +84,7 @@ export default function AgeContentCenter({ ageMonths, sex }: { ageMonths: number
       <div className="ac-focus-grid">{selected.focus.map((item) => <span key={item}>{item}</span>)}</div>
     </article>
 
-    {isEarlyChildhood ? <EarlyChildhoodGuide ageMonths={selected.id === current?.id ? ageMonths : selected.minMonths} sex={sex} /> : <section className="ac-older-guide">
+    {isEarlyChildhood ? <EarlyChildhoodGuide ageMonths={selected.id === current?.id ? profileAgeMonths : selected.minMonths} sex={profileSex} /> : <section className="ac-older-guide">
       <div className="ac-content-grid">
         {(STAGE_NOTES[selected.id] ?? selected.focus).map((item, index) => <article key={item}><span>{String(index + 1).padStart(2, "0")}</span><p>{item}</p></article>)}
       </div>
