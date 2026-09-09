@@ -82,6 +82,20 @@ function boundedSeconds(value: number | undefined, fallback: number, minimum: nu
   return Number.isFinite(value) ? Math.max(minimum, Math.min(300, Math.round(value ?? fallback))) : fallback;
 }
 
+function controlLaunchTicket() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  const ticket = params.get("control-launch") ?? "";
+  return /^v1\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(ticket) && ticket.length <= 8192 ? ticket : "";
+}
+
+function clearControlLaunchTicket() {
+  const params = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+  if (!params.has("control-launch")) return;
+  params.delete("control-launch");
+  const hash = params.toString();
+  window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}${hash ? `#${hash}` : ""}`);
+}
+
 function openDb() {
   return new Promise<IDBDatabase>((resolve, reject) => {
     const request = indexedDB.open("child-health-access-device", 1);
@@ -172,8 +186,13 @@ async function api(path: string, body: Record<string, unknown>) {
   return data;
 }
 
-async function register(credential: Credential) {
-  const data = await api("/api/device", { action: "register", publicKey: credential.publicKey, metadata: await deviceMetadata(credential.installationId) });
+async function register(credential: Credential, launchTicket = "") {
+  const data = await api("/api/device", {
+    action: "register",
+    publicKey: credential.publicKey,
+    metadata: await deviceMetadata(credential.installationId),
+    ...(launchTicket ? { controlLaunchTicket: launchTicket } : {}),
+  });
   if (!data.device) throw new ApiError("Máy chủ chưa trả về trạng thái thiết bị.", data);
   return data;
 }
@@ -225,10 +244,22 @@ export default function HealthDeviceGate() {
     setBusy(true);
     setError("");
     setGateCode("");
+    const launchTicket = controlLaunchTicket();
     try {
       const key = await credentialForDevice();
       setCredential(key);
-      const registration = await register(key);
+      let registration: ApiPayload;
+      try {
+        registration = await register(key, launchTicket);
+      } catch (caught) {
+        if (launchTicket && caught instanceof ApiError && caught.data.code === "CONTROL_WEB_LAUNCH_REPLAY") {
+          registration = await register(key);
+        } else {
+          throw caught;
+        }
+      } finally {
+        if (launchTicket) clearControlLaunchTicket();
+      }
       setDevice(registration.device ?? null);
       if (registration.policy) setPolicy(registration.policy);
       if (registration.device?.status === "approved") await loadCourse(key, registration.device);

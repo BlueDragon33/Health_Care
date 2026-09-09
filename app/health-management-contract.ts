@@ -3,7 +3,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   application: "health-care",
   canonicalApplication: "health-care",
   displayName: "Sức khỏe Y tế",
-  contractVersion: 2,
+  contractVersion: 3,
   controlProtocol: "application-management-health-control-v1",
   transport: "chatgpt-sites",
   auth: {
@@ -12,6 +12,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
     audience: "health-care-control",
     app: "health-care",
     ttlSeconds: 300,
+    webLaunchTtlSeconds: 60,
     secretEnv: "HEALTH_CONTROL_SERVICE_SECRET",
   },
   endpoints: {
@@ -23,6 +24,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
     automation: "/api/control/automation",
     contentReview: "/api/control/health-content",
     audit: "/api/control/audit",
+    webLaunchTarget: "/suc-khoe-tre",
   },
   deviceRegistry: {
     owner: "Health_Care",
@@ -32,6 +34,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   capabilities: [
     "device-access",
     "device-auto-approval",
+    "control-web-launch",
     "device-edit-permission",
     "device-calendar-permission",
     "session-revocation",

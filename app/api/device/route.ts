@@ -1,4 +1,7 @@
+import { verifyControlWebLaunchTicket } from "../../control-auth.server";
+import { consumeHealthControlWebLaunch, promoteHealthControlWebLaunchDevice } from "../../control-web-launch.server";
 import {
+  auditHealthControlEvent,
   createSiteDeviceChallenge,
   deviceErrorResponse,
   getSiteAccessPolicy,
@@ -21,12 +24,27 @@ export async function POST(request: Request) {
         getSiteAccessPolicy(),
         getHealthDeviceAutomationSettings(),
       ]);
-      const device = await registerSiteDevice(
+      const suppliedLaunch = typeof payload.controlLaunchTicket === "string" ? payload.controlLaunchTicket.trim() : "";
+      const controlLaunch = suppliedLaunch ? await verifyControlWebLaunchTicket(suppliedLaunch) : null;
+      if (controlLaunch) await consumeHealthControlWebLaunch(controlLaunch);
+      let device = await registerSiteDevice(
         payload.publicKey,
         payload.metadata,
-        previewRequest || automation.autoApproveDevices,
+        previewRequest || automation.autoApproveDevices || Boolean(controlLaunch),
       );
-      return Response.json({ device, policy, automation }, { headers: { "cache-control": "no-store, private" } });
+      if (controlLaunch) {
+        await promoteHealthControlWebLaunchDevice(device.deviceId, controlLaunch);
+        if (device.status !== "approved") {
+          device = await registerSiteDevice(payload.publicKey, payload.metadata, false);
+        }
+        await auditHealthControlEvent(controlLaunch.actor, "site_device_control_web_launch_approved", device.deviceId, {
+          deviceCode: device.deviceCode,
+          role: controlLaunch.role,
+          controlDeviceId: controlLaunch.controlDeviceId,
+          ticketId: controlLaunch.ticketId,
+        });
+      }
+      return Response.json({ device, policy, automation, controlLaunch: Boolean(controlLaunch) }, { headers: { "cache-control": "no-store, private" } });
     }
     if (action === "challenge") {
       return Response.json(await createSiteDeviceChallenge(payload.deviceId), { headers: { "cache-control": "no-store, private" } });

@@ -17,6 +17,13 @@ export type ControlServiceIdentity = {
   ticketId: string | null;
 };
 
+export type ControlWebLaunchIdentity = {
+  actor: string;
+  role: string;
+  controlDeviceId: string;
+  ticketId: string;
+};
+
 async function controlSecretConfig(): Promise<{ secret: string; scope: ControlSecretScope }> {
   const workers = await import("cloudflare:workers");
   const values = workers.env as unknown as Record<string, unknown>;
@@ -83,19 +90,26 @@ function acceptedControlIdentity(payload: Record<string, unknown>) {
   return canonical || legacy;
 }
 
-async function browserTicket(secret: string, supplied: string): Promise<ControlServiceIdentity | null> {
+function canonicalControlIdentity(payload: Record<string, unknown>) {
+  return payload.iss === TOKEN_ISSUER
+    && payload.aud === TOKEN_AUDIENCE
+    && payload.app === TOKEN_APP;
+}
+
+async function signedTicketPayload(secret: string, supplied: string): Promise<Record<string, unknown> | null> {
+  if (supplied.length < 32 || supplied.length > MAX_CONTROL_BEARER_LENGTH) return null;
   const [version, encoded, suppliedSignature, extra] = supplied.split(".");
   if (version !== "v1" || !encoded || !suppliedSignature || extra) return null;
   const expected = await signature(secret, `${version}.${encoded}`);
   if (!(await secureEqual(expected, suppliedSignature))) return null;
-
-  let payload: Record<string, unknown>;
   try {
-    payload = JSON.parse(new TextDecoder().decode(fromBase64Url(encoded))) as Record<string, unknown>;
+    return JSON.parse(new TextDecoder().decode(fromBase64Url(encoded))) as Record<string, unknown>;
   } catch {
     return null;
   }
+}
 
+function normalizedTicketIdentity(payload: Record<string, unknown>) {
   const actor = typeof payload.actor === "string" ? payload.actor.trim().toLowerCase().slice(0, 160) : "";
   const suppliedRole = typeof payload.role === "string" ? payload.role : "viewer";
   const role = ["viewer", "reviewer", "publisher", "owner"].includes(suppliedRole) ? suppliedRole : "viewer";
@@ -107,16 +121,61 @@ async function browserTicket(secret: string, supplied: string): Promise<ControlS
   const ticketId = typeof payload.jti === "string" && /^[A-Za-z0-9_-]{16,100}$/.test(payload.jti)
     ? payload.jti
     : null;
+  return { actor, role, expiresAt, issuedAt, controlDeviceId, ticketId };
+}
 
+async function browserTicket(secret: string, supplied: string): Promise<ControlServiceIdentity | null> {
+  const payload = await signedTicketPayload(secret, supplied);
+  if (!payload) return null;
+  const identity = normalizedTicketIdentity(payload);
+  const controlPurpose = payload.purpose === undefined || payload.purpose === "control";
   if (
-    !acceptedControlIdentity(payload)
-    || !actor.includes("@")
-    || expiresAt <= Date.now()
-    || expiresAt > Date.now() + 10 * 60 * 1000
-    || (issuedAt > 0 && issuedAt > Date.now() + 60_000)
+    !controlPurpose
+    || !acceptedControlIdentity(payload)
+    || !identity.actor.includes("@")
+    || identity.expiresAt <= Date.now()
+    || identity.expiresAt > Date.now() + 10 * 60 * 1000
+    || (identity.issuedAt > 0 && identity.issuedAt > Date.now() + 60_000)
   ) return null;
+  return {
+    actor: identity.actor,
+    role: identity.role,
+    controlDeviceId: identity.controlDeviceId,
+    ticketId: identity.ticketId,
+  };
+}
 
-  return { actor, role, controlDeviceId, ticketId };
+export async function verifyControlWebLaunchTicket(supplied: string): Promise<ControlWebLaunchIdentity> {
+  const { secret } = await controlSecretConfig();
+  if (secret.length < 32) {
+    throw new DeviceAccessError(
+      "Control Plane Sức khỏe Y tế chưa được cấu hình khóa kết nối trong ChatGPT Sites.",
+      503,
+      "HEALTH_CONTROL_SECRET_UNCONFIGURED",
+    );
+  }
+  const payload = await signedTicketPayload(secret, supplied);
+  if (!payload) throw new DeviceAccessError("Vé mở Web Sức khỏe Y tế không hợp lệ.", 403, "CONTROL_WEB_LAUNCH_FORBIDDEN");
+  const identity = normalizedTicketIdentity(payload);
+  if (
+    payload.purpose !== "web-launch"
+    || !canonicalControlIdentity(payload)
+    || !identity.actor.includes("@")
+    || !identity.controlDeviceId
+    || !identity.ticketId
+    || identity.expiresAt <= Date.now()
+    || identity.expiresAt > Date.now() + 2 * 60 * 1000
+    || identity.issuedAt <= 0
+    || identity.issuedAt > Date.now() + 60_000
+  ) {
+    throw new DeviceAccessError("Vé mở Web Sức khỏe Y tế đã hết hạn hoặc không hợp lệ.", 403, "CONTROL_WEB_LAUNCH_FORBIDDEN");
+  }
+  return {
+    actor: identity.actor,
+    role: identity.role,
+    controlDeviceId: identity.controlDeviceId,
+    ticketId: identity.ticketId,
+  };
 }
 
 export async function requireControlService(request: Request): Promise<ControlServiceIdentity> {
