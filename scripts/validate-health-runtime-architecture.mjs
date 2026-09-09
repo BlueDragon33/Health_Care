@@ -10,6 +10,8 @@ const catalog = read("app/suc-khoe-tre/health-domain-catalog.ts");
 const maturity = read("app/suc-khoe-tre/health-domain-maturity.ts");
 const map = read("app/suc-khoe-tre/health-framework-map.tsx");
 const client = read("app/suc-khoe-tre/health-client.tsx");
+const advancedModules = read("app/suc-khoe-tre/advanced-health-modules.tsx");
+const profileRegistry = read("app/suc-khoe-tre/health-profile-registry.ts");
 const page = read("app/suc-khoe-tre/page.tsx");
 
 const catalogIds = [...catalog.matchAll(/\n\s*id: "([^"]+)"/g)].map((match) => match[1]);
@@ -42,8 +44,17 @@ if (exists("app/suc-khoe-tre/legacy-health-client.tsx")) fail("legacy-health-cli
 if (exists("app/suc-khoe-tre/health.css")) fail("legacy health.css không được quay lại runtime canonical");
 if (!/HealthDeviceGate/.test(page)) fail("page canonical phải đi qua Device Gate");
 if (!/HealthFramework/.test(client)) fail("HealthClient phải dùng HealthFramework modular hiện hành");
+if (!/HealthFrameworkMap/.test(client)) fail("HealthClient phải công bố Framework Map hiện hành");
+if (!/AdvancedHealthModules/.test(client)) fail("HealthClient phải mount host module chuyên sâu tách khỏi core framework");
 if (/legacy-health-client|health\.css/.test(client) || /legacy-health-client|health\.css/.test(page)) fail("canonical page/client không được tham chiếu legacy runtime");
 if (!/HEALTH_DOMAIN_IMPLEMENTATION/.test(map) || !/healthDomainMaturitySummary/.test(map)) fail("Framework Map phải đọc maturity registry thật");
 if (/baselineDomainIds/.test(map)) fail("Framework Map không được dùng danh sách baseline hard-code cũ");
 
-console.log(`Health runtime architecture PASS: ${catalogIds.length} domains · canonical DeviceGate → HealthClient → HealthFramework · legacy monolith removed.`);
+if (!/loadHealthProfileRegistry/.test(advancedModules)) fail("AdvancedHealthModules phải dùng Profile Registry canonical");
+if (!/HEALTH_PROFILE_REGISTRY_CHANGED_EVENT/.test(advancedModules)) fail("AdvancedHealthModules phải theo dõi thay đổi active profile cùng tab");
+if (!/storage/.test(advancedModules) || !/PROFILE_REGISTRY_KEY/.test(advancedModules)) fail("AdvancedHealthModules phải theo dõi active profile khác tab");
+if (!/SecureVaultSessionProvider/.test(advancedModules)) fail("AdvancedHealthModules phải cô lập khóa Secure Vault theo active profile");
+if (!/key=\{`advanced-vault-\$\{activeProfileId\}`\}/.test(advancedModules)) fail("đổi profile phải remount Secure Vault provider để loại bỏ key cũ");
+if (!/window\.dispatchEvent\(new CustomEvent\(HEALTH_PROFILE_REGISTRY_CHANGED_EVENT/.test(profileRegistry)) fail("Profile Registry phải broadcast thay đổi context cho module tách rời");
+
+console.log(`Health runtime architecture PASS: ${catalogIds.length} domains · DeviceGate → HealthClient → FrameworkMap/AdvancedModules/HealthFramework · profile-scoped modular extensions · legacy monolith removed.`);
