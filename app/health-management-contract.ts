@@ -34,6 +34,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   capabilities: [
     "device-access",
     "device-auto-approval",
+    "device-auto-block-pending",
     "control-web-launch",
     "device-edit-permission",
     "device-calendar-permission",
