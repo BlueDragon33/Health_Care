@@ -28,6 +28,12 @@ function optionalHttpsOrigin(name) {
   return url.origin;
 }
 
+function buildRevision() {
+  const value = String(process.env.GITHUB_SHA ?? process.env.HEALTH_BUILD_REVISION ?? "local-preview").trim();
+  if (!/^[A-Za-z0-9._-]{7,80}$/.test(value)) throw new Error("HEALTH_BUILD_REVISION/GITHUB_SHA không hợp lệ.");
+  return value;
+}
+
 if (!fs.existsSync(TEMPLATE)) throw new Error(`Thiếu ${TEMPLATE}.`);
 
 const d1Id = required("HEALTH_PREVIEW_D1_DATABASE_ID");
@@ -39,15 +45,17 @@ if (d1Id.toLowerCase() === PRODUCTION_D1_ID) {
 }
 
 const applicationManagementOrigin = optionalHttpsOrigin("APPLICATION_MANAGEMENT_PREVIEW_ORIGIN");
+const revision = buildRevision();
 const template = fs.readFileSync(TEMPLATE, "utf8");
 const rendered = template
   .replace("__HEALTH_PREVIEW_D1_DATABASE_ID__", d1Id)
-  .replace("__APPLICATION_MANAGEMENT_PREVIEW_ORIGIN__", applicationManagementOrigin);
+  .replace("__APPLICATION_MANAGEMENT_PREVIEW_ORIGIN__", applicationManagementOrigin)
+  .replace("__HEALTH_BUILD_REVISION__", revision);
 
 if (/__[A-Z0-9_]+__/.test(rendered)) throw new Error("Cloudflare preview config vẫn còn placeholder.");
 fs.writeFileSync(TARGET, rendered, { mode: 0o600 });
 
-console.log(`Prepared ${TARGET} with isolated preview D1.`);
+console.log(`Prepared ${TARGET} with isolated preview D1 and revision ${revision}.`);
 console.log(applicationManagementOrigin
   ? `Application Management preview origin: ${applicationManagementOrigin}`
   : "Application Management preview origin chưa có; Health preview sẽ fail-closed cho browser control CORS cho tới lần redeploy sau.");
