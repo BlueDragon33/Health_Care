@@ -14,7 +14,11 @@ const launchService = read("app/control-web-launch.server.ts");
 const deviceRoute = read("app/api/device/route.ts");
 const deviceGate = read("app/suc-khoe-tre/device-gate.tsx");
 const automationMigration = read("drizzle/0006_device_automation.sql");
+const autoBlockMigration = read("drizzle/0008_device_auto_block.sql");
 const launchMigration = read("drizzle/0007_control_web_launch.sql");
+const workerAutomation = read("worker/device-automation.ts");
+const workerIndex = read("worker/index.ts");
+const wrangler = read("wrangler.d1.jsonc");
 
 for (const required of [
   'application: "health-care"',
@@ -28,6 +32,7 @@ for (const required of [
   'secretEnv: "HEALTH_CONTROL_SERVICE_SECRET"',
   'namespace: "SK-"',
   '"device-auto-approval"',
+  '"device-auto-block-pending"',
   '"control-web-launch"',
   'webLaunchTarget: "/suc-khoe-tre"',
   'healthDataInControlPlane: false',
@@ -48,12 +53,26 @@ if (/CONTROL_SERVICE_SECRET/.test(contract) && !/HEALTH_CONTROL_SERVICE_SECRET/.
 if (!/TOKEN_ISSUER = "application-management"/.test(auth) || !/TOKEN_AUDIENCE = "health-care-control"/.test(auth) || !/TOKEN_APP = "health-care"/.test(auth)) fail("identity trong auth không khớp contract");
 if (!/HEALTH_CONTROL_SERVICE_SECRET/.test(auth)) fail("auth phải dùng secret app-scoped Health");
 
-if (!/identity\.role !== "owner"/.test(automationRoute)) fail("chỉ owner được đổi duyệt tự động");
+if (!/identity\.role !== "owner"/.test(automationRoute)) fail("chỉ owner được đổi quy tắc automation");
 if (!/updateHealthDeviceAutomationSettings/.test(automationRoute)) fail("automation route phải ghi vào Health_Care");
 if (!/autoApproveDevices/.test(automationService) || !/site_device_automation/.test(automationService)) fail("thiếu state duyệt tự động phía Health_Care");
+if (!/autoBlockPendingDevices/.test(automationService) || !/pendingBlockAfterHours/.test(automationService)) fail("thiếu state tự động khóa pending phía Health_Care");
 if (!/site_device_auto_approval_updated/.test(automationService)) fail("đổi duyệt tự động phải ghi audit Health");
+if (!/site_device_auto_block_updated/.test(automationService)) fail("đổi auto-block phải ghi audit Health");
 if (!/automation\.autoApproveDevices/.test(deviceRoute)) fail("đăng ký thiết bị phải áp dụng policy duyệt tự động");
 if (!/site_device_automation/.test(automationMigration) || !/DEFAULT 0/.test(automationMigration)) fail("migration phải mặc định fail-closed: không tự duyệt");
+if (!/auto_block_pending_devices/.test(autoBlockMigration) || !/DEFAULT 0/.test(autoBlockMigration)) fail("auto-block migration phải mặc định tắt");
+if (!/pending_block_after_hours/.test(autoBlockMigration) || !/DEFAULT 168/.test(autoBlockMigration)) fail("auto-block mặc định phải chờ 7 ngày");
+
+if (!/status = 'pending'/.test(workerAutomation)) fail("auto-block chỉ được chọn thiết bị pending");
+if (!/WHERE device_id = \? AND status = 'pending'/.test(workerAutomation)) fail("auto-block phải kiểm tra lại pending tại thời điểm ghi để tránh race");
+if (!/status = 'blocked'/.test(workerAutomation) || !/blocked_at = CURRENT_TIMESTAMP/.test(workerAutomation)) fail("auto-block phải giữ registry và chuyển trạng thái blocked");
+if (!/status = 'revoked'/.test(workerAutomation) || !/site_access_sessions/.test(workerAutomation)) fail("auto-block phải thu hồi session đang active");
+if (!/site_device_auto_blocked/.test(workerAutomation) || !/course_audit_log/.test(workerAutomation)) fail("auto-block phải ghi audit theo từng thiết bị");
+if (/DELETE FROM site_access_devices/.test(workerAutomation)) fail("auto-block không được xóa vĩnh viễn registry thiết bị");
+if (!/MAX_DEVICES_PER_RUN = 50/.test(workerAutomation)) fail("scheduled sweep phải có batch bound");
+if (!/runHealthDeviceAutomationSweep/.test(workerIndex) || !/async scheduled\(/.test(workerIndex)) fail("worker phải có scheduled handler riêng, không chạy automation trong fetch");
+if (!/"crons": \["0 \* \* \* \*"\]/.test(wrangler)) fail("auto-block phải được kiểm tra hàng giờ");
 
 if (!/verifyControlWebLaunchTicket/.test(auth) || !/purpose !== "web-launch"/.test(auth)) fail("auth phải tách vé web-launch khỏi vé control thông thường");
 if (!/payload\.purpose === undefined \|\| payload\.purpose === "control"/.test(auth)) fail("control API không được chấp nhận vé web-launch");
@@ -67,4 +86,4 @@ if (!/device\.status !== "approved"/.test(deviceRoute)) fail("sau khi nâng pend
 if (!/control-launch/.test(deviceGate) || !/clearControlLaunchTicket/.test(deviceGate)) fail("client phải đọc vé từ fragment rồi xóa khỏi thanh địa chỉ");
 if (/controlLaunchTicket.*localStorage/s.test(deviceGate)) fail("không được lưu vé control launch vào localStorage");
 
-console.log("Health management contract PASS: live contract v3 + auto approval + one-time control web launch + pending promotion + blocked guard + privacy boundary OK.");
+console.log("Health management contract PASS: live contract v3 + auto approval + safe scheduled pending auto-block + one-time control web launch + pending promotion + blocked guard + privacy boundary OK.");
