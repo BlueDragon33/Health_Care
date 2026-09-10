@@ -13,6 +13,7 @@ const template = fs.readFileSync("wrangler.cloudflare.preview.example.jsonc", "u
 const workflow = fs.readFileSync(".github/workflows/deploy.yml", "utf8");
 const prepare = fs.readFileSync("scripts/prepare-cloudflare-preview.mjs", "utf8");
 const vite = fs.readFileSync("vite.config.ts", "utf8");
+const contract = fs.readFileSync("app/health-management-contract.ts", "utf8");
 
 for (const token of [
   '"name": "health-care-preview"',
@@ -33,6 +34,9 @@ if (!prepare.includes("PRODUCTION_D1_ID") || !prepare.includes("Preview tuyệt 
 }
 if (!prepare.includes(".chatgpt.site")) throw new Error("Prepare script phải chặn fallback về ChatGPT Sites.");
 if (!vite.includes("CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH")) throw new Error("Vite config chưa hỗ trợ Cloudflare preview config path.");
+if (!contract.includes('transport: "https-worker"') || !contract.includes('primaryTarget: "cloudflare-workers"')) {
+  throw new Error("Health management contract chưa phản ánh transport Cloudflare mới.");
+}
 
 if (!workflow.includes("workflow_dispatch")) throw new Error("Cloudflare preview deploy phải là manual workflow ở giai đoạn này.");
 if (/\npush:\s*(\n|$)/.test(workflow)) throw new Error("Cloudflare preview chưa được phép auto-deploy khi push main.");
@@ -43,4 +47,4 @@ if (!workflow.includes("wrangler d1 migrations apply health-care-preview-db --re
 if (!workflow.includes("wrangler deploy")) throw new Error("Deploy workflow chưa có bước deploy Cloudflare Worker.");
 if (workflow.includes("suc-khoe-tre-db --remote")) throw new Error("Deploy preview tuyệt đối không được migrate production D1.");
 
-console.log("Health Cloudflare preview scaffold PASS: manual-only, isolated D1, dual-runtime safe.");
+console.log("Health Cloudflare preview scaffold PASS: manual-only, isolated D1, hosting-neutral control contract.");
