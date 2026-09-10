@@ -21,36 +21,49 @@ Không nhúng `/admin`, iframe hay shared router quản trị vào Health_Care. 
 
 ## Control Plane hiện hành
 
-Application Management hiện chạy trong **ChatGPT Sites**. Health_Care không còn khóa Control API vào URL `learning-management.boiech-ai.workers.dev`.
-
-Vé quản trị chuẩn 5 phút dùng danh tính:
+Application Management và Health_Care đang chuyển khỏi ChatGPT Sites sang mô hình repo độc lập + Cloudflare Workers. Contract quản trị vẫn giữ danh tính ổn định:
 
 - issuer: `application-management`;
 - audience: `health-care-control`;
-- app: `health-care`.
+- app: `health-care`;
+- secret app-scoped: `HEALTH_CONTROL_SERVICE_SECRET`.
 
 Trong giai đoạn chuyển tiếp, Health_Care vẫn chấp nhận vé legacy `quan-ly-hoc-tap / child-health-control / child-health` để không làm đứt phiên cũ; Application Management mới không còn phát loại vé legacy này.
 
-CORS của Control API chấp nhận origin ChatGPT Sites qua HTTPS (`*.chatgpt.site`) và localhost khi phát triển. Mọi request vẫn phải có vé HMAC hợp lệ hoặc service credential hợp lệ; CORS không thay thế xác thực.
+`HEALTH_CONTROL_SERVICE_SECRET` không phải mật khẩu người dùng và không được commit. Khi chạy Cloudflare, secret này được đặt bằng Cloudflare/GitHub Environment và phải khớp với phía Application Management cùng môi trường.
 
-`HEALTH_CONTROL_SERVICE_SECRET` là khóa app-scoped giữa hai Site. Đây là lớp xác thực ứng dụng, **không phải phụ thuộc Cloudflare** và không phải mật khẩu người dùng. Khi chạy bằng ChatGPT Sites, giá trị này phải được cấu hình bằng hosted secret của từng Site, không commit vào repo hay `.openai/hosting.json`.
+## Cloudflare Preview
+
+Cloudflare Preview là đường triển khai mới được ưu tiên trước khi lên production. Preview dùng:
+
+- Worker `health-care-preview`;
+- D1 `health-care-preview-db` riêng;
+- `workers.dev` được phép dùng trong giai đoạn đầu, không cần tên miền riêng;
+- workflow manual-only `.github/workflows/deploy.yml`;
+- không dùng D1 production hiện tại;
+- không tự chạy cron auto-block trong giai đoạn bootstrap preview.
+
+Hướng dẫn chi tiết: `docs/CLOUDFLARE_PREVIEW.md`.
+
+Workflow preview yêu cầu GitHub Environment `health-preview` với các secret `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, `HEALTH_PREVIEW_D1_DATABASE_ID`, `HEALTH_CONTROL_SERVICE_SECRET`. URL preview được lưu dưới GitHub Variables, không hard-code vào source.
 
 ## Runtime Health
 
-Health_Care vẫn sở hữu runtime và D1 riêng. Các tên hạ tầng legacy hiện có (`suc-khoe-tre`, `suc-khoe-tre-db`) được giữ để không phá dữ liệu trong lúc chuyển hosting. Workflow Cloudflare hiện có chỉ thuộc đường deploy runtime legacy của Health_Care; **Application Management không còn cần một Worker Cloudflare riêng để quản trị Health**.
+Health_Care tiếp tục sở hữu runtime, registry `SK-`, session, policy, automation, audit và D1 riêng. Các tên hạ tầng cũ (`suc-khoe-tre`, `suc-khoe-tre-db`) vẫn được giữ nguyên để tránh động vào dữ liệu production trong khi migration.
 
-Khi Health_Care được phát hành hoàn toàn bằng ChatGPT Sites, endpoint production dùng cho `HEALTH_CARE_BASE_URL` phải là URL Site Health_Care đang được phê duyệt. Không hard-code URL `workers.dev` trở lại adapter quản trị.
+Preview Cloudflare không được phép trỏ vào D1 production. Script `scripts/prepare-cloudflare-preview.mjs` chặn trực tiếp production D1 ID và chặn fallback về `*.chatgpt.site`.
 
 ## Điều kiện kết nối Application Management
 
 Phía Application Management cần:
 
-- `HEALTH_CARE_BASE_URL`: URL production của Site Health_Care;
+- `HEALTH_CARE_BASE_URL`: HTTPS origin của Health_Care trong cùng môi trường;
 - `HEALTH_CONTROL_SERVICE_SECRET`: cùng khóa app-scoped với Health_Care.
 
 Phía Health_Care cần:
 
 - `HEALTH_CONTROL_SERVICE_SECRET` cùng giá trị;
+- `APPLICATION_MANAGEMENT_ORIGIN` trỏ về HTTPS origin của Trung tâm khi đã có;
 - Control API giữ ranh giới `healthDataInControlPlane=false`;
 - registry thiết bị `SK-`, session, policy và audit tiếp tục thuộc Health_Care.
 
@@ -70,6 +83,7 @@ npm run validate:growth
 npm run validate:framework
 npm run validate:device
 npm run validate:control
+npm run validate:cloudflare-preview
 npm run lint
 npm run build
 ```
@@ -82,7 +96,7 @@ Không merge `main` khi một gate chưa PASS.
 app/        Web App, Device Gate, Control API, health engines/contracts
 worker/     runtime entry hiện hành
 public/     PWA assets
-scripts/    build/validation gates
+scripts/    build/validation/deployment gates
 drizzle/    D1 migrations
 docs/       architecture, audit, privacy, release checklist
 ```

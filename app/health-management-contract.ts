@@ -5,7 +5,12 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   displayName: "Sức khỏe Y tế",
   contractVersion: 3,
   controlProtocol: "application-management-health-control-v1",
-  transport: "chatgpt-sites",
+  transport: "https-worker",
+  hosting: {
+    primaryTarget: "cloudflare-workers",
+    legacyTarget: "chatgpt-sites",
+    originBound: true,
+  },
   auth: {
     ticketVersion: "v1",
     issuer: "application-management",

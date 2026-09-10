@@ -7,9 +7,10 @@ const editorLoginPath = new URL("../app/editor-login-required/page.tsx", import.
 const editorWorkspacePath = new URL("../app/bien-tap-suc-khoe-tre/workspace.tsx", import.meta.url);
 const editorDeviceAuthPath = new URL("../app/editor-device-auth.server.ts", import.meta.url);
 const wranglerPath = new URL("../wrangler.d1.jsonc", import.meta.url);
+const previewWranglerPath = new URL("../wrangler.cloudflare.preview.example.jsonc", import.meta.url);
 const deployPath = new URL("../.github/workflows/deploy.yml", import.meta.url);
 
-const [controlAuth, editorAuth, editorBridge, editorLogin, editorWorkspace, editorDeviceAuth, wrangler, deploy] = await Promise.all([
+const [controlAuth, editorAuth, editorBridge, editorLogin, editorWorkspace, editorDeviceAuth, wrangler, previewWrangler, deploy] = await Promise.all([
   readFile(controlAuthPath, "utf8"),
   readFile(editorAuthPath, "utf8"),
   readFile(editorBridgePath, "utf8"),
@@ -17,6 +18,7 @@ const [controlAuth, editorAuth, editorBridge, editorLogin, editorWorkspace, edit
   readFile(editorWorkspacePath, "utf8"),
   readFile(editorDeviceAuthPath, "utf8"),
   readFile(wranglerPath, "utf8"),
+  readFile(previewWranglerPath, "utf8"),
   readFile(deployPath, "utf8"),
 ]);
 
@@ -25,7 +27,6 @@ const requiredControlMarkers = [
   'const TOKEN_ISSUER = "application-management"',
   'const TOKEN_AUDIENCE = "health-care-control"',
   'const TOKEN_APP = "health-care"',
-  '.chatgpt.site',
   "HEALTH_CONTROL_SECRET_UNCONFIGURED",
 ];
 
@@ -51,8 +52,8 @@ for (const marker of [
 if (!editorBridge.includes('window.location.hash') || !editorBridge.includes('fetch("/api/editor/session"') || !editorBridge.includes('method: "POST"')) {
   throw new Error("Editor bridge must exchange the short-lived ticket from the URL fragment by same-origin POST.");
 }
-if (/learning-management\.boiech-ai\.workers\.dev|workers\.dev/i.test(editorLogin)) {
-  throw new Error("Editor login guidance must not point back to the legacy Cloudflare admin URL.");
+if (/learning-management\.boiech-ai\.workers\.dev/i.test(editorLogin)) {
+  throw new Error("Editor login guidance must not point back to the legacy shared admin URL.");
 }
 if (!editorWorkspace.includes("health-care-editor:") || !editorDeviceAuth.includes("health-care-editor:")) {
   throw new Error("Editor P-256 proof must use the Health_Care cryptographic domain on both client and server.");
@@ -77,20 +78,29 @@ for (const [name, source] of [["control auth", controlAuth], ["editor auth", edi
 }
 
 if (!/"database_name"\s*:\s*"suc-khoe-tre-db"/.test(wrangler)) {
-  throw new Error("Health_Care must keep its dedicated suc-khoe-tre-db database binding.");
+  throw new Error("Health_Care must keep its dedicated production suc-khoe-tre-db binding during migration.");
 }
 if (/boi[-_]?ech/i.test(wrangler) || /application[-_]?management/i.test(wrangler)) {
   throw new Error("Health_Care runtime configuration must not bind a BOIECH/Admin database or runtime.");
 }
+if (!/"database_name"\s*:\s*"health-care-preview-db"/.test(previewWrangler)) {
+  throw new Error("Cloudflare preview must use its own health-care-preview-db binding.");
+}
+if (/6bb920e1-c4dc-4f15-96d5-07516490959b/.test(previewWrangler)) {
+  throw new Error("Cloudflare preview must not carry the Health production D1 ID.");
+}
 
 if (!/workflow_dispatch\s*:/.test(deploy)) {
-  throw new Error("Legacy Cloudflare deployment must remain explicit/manual only.");
+  throw new Error("Cloudflare preview deployment must remain explicit/manual only.");
 }
 if (/\n\s*push\s*:/.test(deploy)) {
-  throw new Error("Health_Care must not auto-deploy to Cloudflare on main pushes after ChatGPT Sites migration.");
+  throw new Error("Health_Care preview must not auto-deploy on main pushes before production gate approval.");
 }
-if (!deploy.includes("Legacy Cloudflare Deploy (manual only)")) {
-  throw new Error("Legacy Cloudflare workflow must be clearly marked manual-only.");
+if (!deploy.includes("Health Cloudflare Preview Deploy") || !deploy.includes("DEPLOY_PREVIEW")) {
+  throw new Error("Cloudflare preview workflow must be clearly identified and require explicit confirmation.");
+}
+if (!deploy.includes("health-care-preview-db --remote") || deploy.includes("suc-khoe-tre-db --remote")) {
+  throw new Error("Cloudflare preview workflow must migrate only the preview D1 database.");
 }
 
-console.log("Health_Care ChatGPT Sites control-plane separation: OK");
+console.log("Health_Care control-plane separation: Cloudflare preview isolated from production/client databases and manual-only.");

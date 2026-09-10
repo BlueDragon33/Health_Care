@@ -49,8 +49,14 @@ const required = {
   ],
   ".github/workflows/deploy.yml": [
     "workflow_dispatch",
-    "HEALTH_BUILD_REVISION:${GITHUB_SHA}",
-    "HEALTH_BUILD_SOURCE:BlueDragon33/Health_Care",
+    "HEALTH_PREVIEW_D1_DATABASE_ID",
+    "HEALTH_CONTROL_SERVICE_SECRET",
+    "cloudflare:preview:prepare",
+  ],
+  "wrangler.cloudflare.preview.example.jsonc": [
+    "HEALTH_BUILD_REVISION",
+    "HEALTH_BUILD_SOURCE",
+    "BlueDragon33/Health_Care",
   ],
   "app/api/control/devices/route.ts": [
     "classificationConfidence",
@@ -95,4 +101,4 @@ if (/values\.CONTROL_SERVICE_SECRET/.test(controlAuth) || controlAuth.includes("
   throw new Error("Health_Care không được fallback sang CONTROL_SERVICE_SECRET dùng chung.");
 }
 
-console.log("Device management V3 PASS: classification, review, canonical identity, capabilities, dedicated Health control secret and deployed revision contract are aligned.");
+console.log("Device management V3 PASS: classification, review, canonical identity, capabilities, dedicated Health control secret and Cloudflare preview revision contract are aligned.");

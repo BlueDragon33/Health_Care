@@ -46,6 +46,9 @@ jobs:
       - name: Validate control-plane separation
         run: npm run validate:control
 
+      - name: Validate Cloudflare preview deployment boundary
+        run: npm run validate:cloudflare-preview
+
       - name: Enforce repository separation
         shell: bash
         run: |
@@ -67,6 +70,7 @@ jobs:
           test -d worker
           test -d drizzle
           test -f wrangler.d1.jsonc
+          test -f wrangler.cloudflare.preview.example.jsonc
 
       - name: Lint
         run: npm run lint
