@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const identity = await requireControlService(request);
-    if (identity.role !== "owner") throw new DeviceAccessError("Chỉ Chủ hệ thống được đổi quy tắc duyệt tự động Sức khỏe Y tế.", 403, "OWNER_REQUIRED");
+    if (identity.role !== "owner") throw new DeviceAccessError("Chỉ Chủ hệ thống được đổi quy tắc tự động xử lý thiết bị Sức khỏe Y tế.", 403, "OWNER_REQUIRED");
     const payload = (await request.json()) as Record<string, unknown>;
     const automation = await updateHealthDeviceAutomationSettings(identity.actor, payload);
     return controlResponse({ application: "health-care", automation }, 200, request);
