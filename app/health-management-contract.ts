@@ -19,6 +19,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
     contract: "/api/control/contract",
     status: "/api/control/status",
     devices: "/api/control/devices",
+    deviceCommands: "/api/control/device-commands",
     sessions: "/api/control/sessions",
     policy: "/api/control/policy",
     automation: "/api/control/automation",
@@ -33,6 +34,7 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
   },
   capabilities: [
     "device-access",
+    "device-idempotent-commands",
     "device-auto-approval",
     "device-auto-block-pending",
     "control-web-launch",
