@@ -22,6 +22,8 @@
   ],
   "vars": {
     "APPLICATION_MANAGEMENT_ORIGIN": "__APPLICATION_MANAGEMENT_PREVIEW_ORIGIN__",
-    "HEALTH_DEPLOYMENT_CHANNEL": "cloudflare-preview"
+    "HEALTH_DEPLOYMENT_CHANNEL": "cloudflare-preview",
+    "HEALTH_BUILD_REVISION": "__HEALTH_BUILD_REVISION__",
+    "HEALTH_BUILD_SOURCE": "BlueDragon33/Health_Care"
   }
 }
