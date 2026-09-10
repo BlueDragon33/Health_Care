@@ -16,6 +16,8 @@
     "validate:core-features": "node scripts/validate-age-nutrition-reminder-audit.mjs && node scripts/validate-restored-9m-content.mjs",
     "validate:device": "node scripts/validate-device-classification.mjs",
     "validate:control": "node scripts/validate-control-plane-separation.mjs && node scripts/validate-health-management-contract.mjs",
+    "validate:cloudflare-preview": "node scripts/validate-cloudflare-preview.mjs",
+    "cloudflare:preview:prepare": "node scripts/prepare-cloudflare-preview.mjs",
     "lint": "bash scripts/sites-env.sh -- eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "bash scripts/sites-env.sh -- drizzle-kit generate"
   },
