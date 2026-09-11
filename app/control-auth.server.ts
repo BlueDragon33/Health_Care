@@ -24,14 +24,41 @@ export type ControlWebLaunchIdentity = {
   ticketId: string;
 };
 
-async function controlSecretConfig(): Promise<{ secret: string; scope: ControlSecretScope }> {
+type ControlConfiguration = {
+  secret: string;
+  scope: ControlSecretScope;
+  origin: string;
+};
+
+function normalizedControlOrigin(value: unknown, allowLocalHttp: boolean) {
+  const raw = typeof value === "string" ? value.trim().replace(/\/$/, "") : "";
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    if (url.username || url.password || url.pathname !== "/" || url.search || url.hash) return "";
+    if (url.protocol === "https:") return url.origin;
+    const loopback = url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "[::1]" || url.hostname === "::1";
+    if (allowLocalHttp && url.protocol === "http:" && loopback) return url.origin;
+    return "";
+  } catch {
+    return "";
+  }
+}
+
+function trustedControlOrigin(value: string, configuredOrigin: string) {
+  return Boolean(configuredOrigin) && value.replace(/\/$/, "") === configuredOrigin;
+}
+
+async function controlSecretConfig(): Promise<ControlConfiguration> {
   const workers = await import("cloudflare:workers");
   const values = workers.env as unknown as Record<string, unknown>;
   const healthSecret = typeof values.HEALTH_CONTROL_SERVICE_SECRET === "string"
     ? values.HEALTH_CONTROL_SERVICE_SECRET
     : "";
-  if (healthSecret.length >= 32) return { secret: healthSecret, scope: "health" };
-  return { secret: "", scope: "unconfigured" };
+  const allowLocalHttp = values.LOCAL_CONTROL_PLANE === "true";
+  const origin = normalizedControlOrigin(values.APPLICATION_MANAGEMENT_ORIGIN, allowLocalHttp);
+  if (healthSecret.length >= 32) return { secret: healthSecret, scope: "health", origin };
+  return { secret: "", scope: "unconfigured", origin };
 }
 
 export async function getControlSecretScope(): Promise<ControlSecretScope> {
@@ -149,7 +176,7 @@ export async function verifyControlWebLaunchTicket(supplied: string): Promise<Co
   const { secret } = await controlSecretConfig();
   if (secret.length < 32) {
     throw new DeviceAccessError(
-      "Control Plane Sức khỏe Y tế chưa được cấu hình khóa kết nối trong ChatGPT Sites.",
+      "Trung tâm quản trị Sức khỏe Y tế chưa được cấu hình khóa kết nối.",
       503,
       "HEALTH_CONTROL_SECRET_UNCONFIGURED",
     );
@@ -179,13 +206,18 @@ export async function verifyControlWebLaunchTicket(supplied: string): Promise<Co
 }
 
 export async function requireControlService(request: Request): Promise<ControlServiceIdentity> {
-  const { secret: configured } = await controlSecretConfig();
+  const { secret: configured, origin } = await controlSecretConfig();
   if (configured.length < 32) {
     throw new DeviceAccessError(
-      "Control Plane Sức khỏe Y tế chưa được cấu hình khóa kết nối trong ChatGPT Sites.",
+      "Trung tâm quản trị Sức khỏe Y tế chưa được cấu hình khóa kết nối.",
       503,
       "HEALTH_CONTROL_SECRET_UNCONFIGURED",
     );
+  }
+
+  const requestOrigin = (request.headers.get("origin") ?? "").replace(/\/$/, "");
+  if (requestOrigin && !trustedControlOrigin(requestOrigin, origin)) {
+    throw new DeviceAccessError("Origin không được phép dùng Control API Sức khỏe Y tế.", 403, "CONTROL_ORIGIN_FORBIDDEN");
   }
 
   const authorization = request.headers.get("authorization") ?? "";
@@ -214,22 +246,11 @@ export async function requireControlService(request: Request): Promise<ControlSe
   };
 }
 
-function isAllowedControlOrigin(origin: string) {
-  if (!origin) return false;
-  if (origin === "http://localhost:3000" || origin === "http://localhost:5173") return true;
-  try {
-    const url = new URL(origin);
-    return url.protocol === "https:"
-      && (url.hostname === "chatgpt.site" || url.hostname.endsWith(".chatgpt.site"));
-  } catch {
-    return false;
-  }
-}
-
-function corsHeaders(request: Request): Record<string, string> {
-  const origin = request.headers.get("origin") ?? "";
-  return isAllowedControlOrigin(origin) ? {
-    "access-control-allow-origin": origin,
+async function corsHeaders(request: Request): Promise<Record<string, string>> {
+  const { origin } = await controlSecretConfig();
+  const requestOrigin = (request.headers.get("origin") ?? "").replace(/\/$/, "");
+  return trustedControlOrigin(requestOrigin, origin) ? {
+    "access-control-allow-origin": requestOrigin,
     "access-control-allow-methods": "GET, POST, OPTIONS",
     "access-control-allow-headers": "authorization, content-type",
     "access-control-max-age": "600",
@@ -237,26 +258,27 @@ function corsHeaders(request: Request): Record<string, string> {
   } : {};
 }
 
-export function controlResponse(data: unknown, status = 200, request?: Request) {
+export async function controlResponse(data: unknown, status = 200, request?: Request) {
   return Response.json(data, {
     status,
     headers: {
       "cache-control": "no-store, private",
       "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
       "x-content-type-options": "nosniff",
-      ...(request ? corsHeaders(request) : {}),
+      ...(request ? await corsHeaders(request) : {}),
     },
   });
 }
 
-export function controlPreflight(request: Request) {
-  const origin = request.headers.get("origin") ?? "";
-  if (!isAllowedControlOrigin(origin)) return new Response(null, { status: 403 });
-  return new Response(null, { status: 204, headers: corsHeaders(request) });
+export async function controlPreflight(request: Request) {
+  const { origin } = await controlSecretConfig();
+  const requestOrigin = (request.headers.get("origin") ?? "").replace(/\/$/, "");
+  if (!trustedControlOrigin(requestOrigin, origin)) return new Response(null, { status: 403 });
+  return new Response(null, { status: 204, headers: await corsHeaders(request) });
 }
 
-export function withControlCors(request: Request, response: Response) {
+export async function withControlCors(request: Request, response: Response) {
   const headers = new Headers(response.headers);
-  for (const [key, value] of Object.entries(corsHeaders(request))) headers.set(key, value);
+  for (const [key, value] of Object.entries(await corsHeaders(request))) headers.set(key, value);
   return new Response(response.body, { status: response.status, statusText: response.statusText, headers });
 }

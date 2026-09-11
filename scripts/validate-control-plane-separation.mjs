@@ -28,12 +28,24 @@ const requiredControlMarkers = [
   'const TOKEN_AUDIENCE = "health-care-control"',
   'const TOKEN_APP = "health-care"',
   "HEALTH_CONTROL_SECRET_UNCONFIGURED",
+  "APPLICATION_MANAGEMENT_ORIGIN",
+  "LOCAL_CONTROL_PLANE",
+  "normalizedControlOrigin",
+  "trustedControlOrigin",
+  "CONTROL_ORIGIN_FORBIDDEN",
 ];
 
 for (const marker of requiredControlMarkers) {
   if (!controlAuth.includes(marker)) {
     throw new Error(`Control-plane separation gate failed: missing ${marker}`);
   }
+}
+
+if (/chatgpt\.site/i.test(controlAuth)) {
+  throw new Error("Health control CORS must not retain a ChatGPT Sites origin fallback.");
+}
+if (!previewWrangler.includes('"APPLICATION_MANAGEMENT_ORIGIN": "__APPLICATION_MANAGEMENT_PREVIEW_ORIGIN__"')) {
+  throw new Error("Health preview must materialize the exact Application Management origin.");
 }
 
 for (const marker of [
@@ -103,4 +115,4 @@ if (!deploy.includes("health-care-preview-db --remote") || deploy.includes("suc-
   throw new Error("Cloudflare preview workflow must migrate only the preview D1 database.");
 }
 
-console.log("Health_Care control-plane separation: Cloudflare preview isolated from production/client databases and manual-only.");
+console.log("Health_Care control-plane separation: exact Application Management origin, isolated preview DB, manual-only deploy.");
