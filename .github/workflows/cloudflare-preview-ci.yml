@@ -1,0 +1,62 @@
+name: Health Cloudflare Preview CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/cloudflare-preview-ci.yml"
+      - ".github/workflows/deploy.yml"
+      - "wrangler.cloudflare.preview.example.jsonc"
+      - "vite.config.ts"
+      - "scripts/prepare-cloudflare-preview.mjs"
+      - "scripts/validate-cloudflare-preview.mjs"
+      - "scripts/validate-cloudflare-build-artifact.mjs"
+      - "worker/**"
+      - "app/**"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  preview-boundary:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      HEALTH_PREVIEW_D1_DATABASE_ID: 55555555-5555-4555-8555-555555555555
+      HEALTH_PRODUCTION_D1_DATABASE_ID: 66666666-6666-4666-8666-666666666666
+      APPLICATION_MANAGEMENT_PREVIEW_ORIGIN: https://application-management-preview.example.com
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22.13.0"
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Install locked dependencies
+        run: npm ci
+
+      - name: Preserve Health regressions
+        run: |
+          npm run validate:growth
+          npm run validate:framework
+          npm run validate:device
+          npm run validate:control
+          npm run validate:cloudflare-preview
+          npm run lint
+
+      - name: Materialize isolated preview config
+        run: npm run cloudflare:preview:prepare
+
+      - name: Build with preview bindings
+        env:
+          CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH: wrangler.cloudflare.preview.jsonc
+        run: npm run build
+
+      - name: Verify generated preview artifact
+        run: npm run cloudflare:artifact:check
+
+      - name: Wrangler dry-run generated preview artifact
+        run: npx wrangler deploy --dry-run --outdir .wrangler/preview-dry-run
