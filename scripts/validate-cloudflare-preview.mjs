@@ -33,7 +33,7 @@ for (const token of [
 if (template.includes(LEGACY_PRODUCTION_D1_ID)) throw new Error("Preview template không được chứa production D1 ID.");
 if (!vite.includes(LOCAL_D1_ID) || !vite.includes('database_name: "health-care-local-db"')) throw new Error("Health local runtime phải dùng D1 identity local-only riêng.");
 if (vite.includes(LEGACY_PRODUCTION_D1_ID)) throw new Error("Vite local config không được chứa production D1 ID.");
-if (!prepare.includes("HEALTH_PRODUCTION_D1_DATABASE_ID") || !prepare.includes(LOCAL_D1_ID)) throw new Error("Prepare script phải chặn cả local và production D1 identity.");
+if (!prepare.includes('d1Uuid("HEALTH_PRODUCTION_D1_DATABASE_ID")') || !prepare.includes(LOCAL_D1_ID)) throw new Error("Prepare script phải bắt buộc guard production và chặn local D1 identity.");
 if (prepare.includes(LEGACY_PRODUCTION_D1_ID)) throw new Error("Prepare script không được hard-code production D1 ID.");
 if (!prepare.includes(".chatgpt.site")) throw new Error("Prepare script phải chặn fallback về ChatGPT Sites.");
 if (!vite.includes("CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH")) throw new Error("Vite config chưa hỗ trợ Cloudflare preview config path.");
@@ -62,4 +62,4 @@ if (jobBlock.includes("CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH")) throw new Error("
 const buildBlock = workflow.slice(workflow.indexOf("Build using the Cloudflare preview config"));
 if (!buildBlock.includes("CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH: wrangler.cloudflare.preview.jsonc")) throw new Error("Cloudflare Vite config path phải chỉ được inject ở bước build preview.");
 
-console.log("Health Cloudflare preview scaffold PASS: manual-only, isolated local/preview/production D1, generated artifact verified.");
+console.log("Health Cloudflare preview scaffold PASS: manual-only, isolated local/preview/production D1, fail-closed production guard, generated artifact verified.");
