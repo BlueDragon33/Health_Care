@@ -3,7 +3,7 @@ import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
 
-const HEALTH_DATABASE_ID = "6bb920e1-c4dc-4f15-96d5-07516490959b";
+const HEALTH_LOCAL_DATABASE_ID = "00000000-0000-0000-0000-000000000004";
 const { d1 } = hostingConfig;
 const allowLan = process.env.LOCAL_CONTROL_ALLOW_LAN === "true";
 const cloudflareConfigPath = process.env.CLOUDFLARE_VITE_WRANGLER_CONFIG_PATH?.trim();
@@ -23,7 +23,7 @@ const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
   vars: localVars,
-  d1_databases: d1 ? [{ binding: d1, database_name: "suc-khoe-tre-db", database_id: HEALTH_DATABASE_ID }] : [],
+  d1_databases: d1 ? [{ binding: d1, database_name: "health-care-local-db", database_id: HEALTH_LOCAL_DATABASE_ID }] : [],
 };
 
 export default defineConfig(async () => {
