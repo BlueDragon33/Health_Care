@@ -1,5 +1,7 @@
 "use client";
 
+import type { HealthLifeStage } from "./health-age-scope";
+
 export type PremiumQuickTarget = "nutrition" | "activity" | "care" | "journal" | "growth" | "profile";
 
 type QuickAction = {
@@ -9,14 +11,44 @@ type QuickAction = {
   tone: "rose" | "mint" | "violet" | "amber" | "blue" | "coral";
 };
 
-const actions: QuickAction[] = [
-  { id: "nutrition", title: "Ghi bữa ăn", subtitle: "Dinh dưỡng", tone: "rose" },
-  { id: "activity", title: "Ghi vận động", subtitle: "Hoạt động", tone: "mint" },
-  { id: "care", title: "Ghi giấc ngủ", subtitle: "Chăm sóc", tone: "violet" },
-  { id: "journal", title: "Ghi triệu chứng", subtitle: "Nhật ký", tone: "amber" },
-  { id: "growth", title: "Ghi chiều cao / cân nặng", subtitle: "Tăng trưởng", tone: "blue" },
-  { id: "profile", title: "Thêm nhắc nhở", subtitle: "Hồ sơ", tone: "coral" },
-];
+function quickActionsForLifeStage(stage: HealthLifeStage | null): QuickAction[] {
+  const infant = stage?.id === "infant-9-11m" || stage?.id === "toddler-12-23m";
+  const earlyChildhood = stage?.id === "early-childhood-2-5y";
+
+  return [
+    {
+      id: "nutrition",
+      title: infant ? "Ghi bú / ăn" : "Ghi bữa ăn",
+      subtitle: infant ? "Dinh dưỡng trẻ nhỏ" : "Dinh dưỡng",
+      tone: "rose",
+    },
+    {
+      id: "activity",
+      title: infant || earlyChildhood ? "Ghi chơi / vận động" : "Ghi vận động",
+      subtitle: infant || earlyChildhood ? "Vận động theo tuổi" : "Hoạt động",
+      tone: "mint",
+    },
+    { id: "care", title: "Ghi giấc ngủ", subtitle: "Chăm sóc", tone: "violet" },
+    {
+      id: "journal",
+      title: infant ? "Ghi dấu hiệu" : "Ghi triệu chứng",
+      subtitle: infant ? "Người chăm sóc ghi" : "Nhật ký",
+      tone: "amber",
+    },
+    {
+      id: "growth",
+      title: infant ? "Ghi chiều dài / cân nặng" : "Ghi chiều cao / cân nặng",
+      subtitle: "Tăng trưởng",
+      tone: "blue",
+    },
+    {
+      id: "profile",
+      title: infant ? "Thêm nhắc chăm sóc" : "Thêm nhắc nhở",
+      subtitle: "Hồ sơ",
+      tone: "coral",
+    },
+  ];
+}
 
 const svgProps = {
   viewBox: "0 0 24 24",
@@ -37,8 +69,10 @@ function QuickIcon({ id }: { id: PremiumQuickTarget }) {
   return <svg {...svgProps}><path d="M18 9a6 6 0 1 0-12 0c0 7-3 7-3 8.5h18C21 16 18 16 18 9Z"/><path d="M9.5 20h5"/></svg>;
 }
 
-export default function PremiumQuickActions({ onNavigate }: { onNavigate: (target: PremiumQuickTarget) => void }) {
-  return <section className="premium-quick-actions" aria-label="Thao tác nhanh">
+export default function PremiumQuickActions({ stage, onNavigate }: { stage: HealthLifeStage | null; onNavigate: (target: PremiumQuickTarget) => void }) {
+  const actions = quickActionsForLifeStage(stage);
+
+  return <section className="premium-quick-actions" aria-label="Thao tác nhanh theo giai đoạn tuổi">
     {actions.map((action) => <button
       key={action.id}
       type="button"
@@ -50,3 +84,9 @@ export default function PremiumQuickActions({ onNavigate }: { onNavigate: (targe
     </button>)}
   </section>;
 }
+
+export const PREMIUM_QUICK_ACTION_GUARDRAILS = {
+  agePresentationOnly: true,
+  noHealthDataTransport: true,
+  noDiagnosisOrTreatmentGeneration: true,
+} as const;
