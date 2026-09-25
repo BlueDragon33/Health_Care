@@ -1,0 +1,16 @@
+import fs from "node:fs";
+import path from "node:path";
+const req=(n)=>{const v=String(process.env[n]??"").trim(); if(!v) throw new Error(`${n} is required.`); return v;};
+const prod=req("HEALTH_PRODUCTION_D1_DATABASE_ID").toLowerCase();
+const preview=req("HEALTH_PREVIEW_D1_DATABASE_ID").toLowerCase();
+if(prod===preview) throw new Error("Production D1 must differ from Preview D1.");
+const redirect=JSON.parse(fs.readFileSync(path.join(process.cwd(),".wrangler","deploy","config.json"),"utf8"));
+const generatedPath=path.resolve(process.cwd(),".wrangler","deploy",redirect.configPath);
+const generated=JSON.parse(fs.readFileSync(generatedPath,"utf8"));
+if(generated.name!=="health-care") throw new Error(`Unexpected Worker name: ${generated.name}`);
+const db=(generated.d1_databases??[]).find(x=>x.binding==="DB");
+if(!db||db.database_name!=="health-care-production-db"||String(db.database_id).toLowerCase()!==prod) throw new Error("Health Production D1 mismatch.");
+if(generated.vars?.HEALTH_DEPLOYMENT_CHANNEL!=="cloudflare-production") throw new Error("Health production channel mismatch.");
+if(!/^[A-Za-z0-9._-]{7,80}$/.test(String(generated.vars?.HEALTH_BUILD_REVISION??""))) throw new Error("Health production revision missing.");
+if(generated.assets?.binding!=="ASSETS"||generated.images?.binding!=="IMAGES") throw new Error("Health production asset/image bindings missing.");
+console.log("Health production artifact PASS.");
