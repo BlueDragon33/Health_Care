@@ -1,0 +1,43 @@
+{
+  "schema": "application-management.contract/v1",
+  "protocol": "application-management-health-control-v1",
+  "application": {
+    "id": "health-care",
+    "name": "Sức khỏe Y tế",
+    "shortName": "Sức khỏe Y tế",
+    "category": "Y tế",
+    "repository": "BlueDragon33/Health_Care",
+    "version": "3"
+  },
+  "capabilities": {
+    "webLaunch": true,
+    "deviceRegistry": true,
+    "deviceApproval": true,
+    "deviceBlock": true,
+    "deviceUnblock": false,
+    "deviceEditPermission": true,
+    "deviceIdempotentCommands": true,
+    "optimisticConcurrency": true,
+    "sessions": true,
+    "audit": true,
+    "contentReview": true,
+    "payments": false,
+    "reports": false
+  },
+  "endpoints": {
+    "status": "/api/control/status",
+    "devices": "/api/control/devices",
+    "deviceCommands": "/api/control/device-commands"
+  },
+  "policy": {
+    "remoteAdminReady": false,
+    "credentialRequired": true,
+    "credentialEnv": "HEALTH_CONTROL_SERVICE_SECRET"
+  },
+  "boundary": {
+    "healthDataInControlPlane": false,
+    "profileDataInControlPlane": false,
+    "sharedClientDatabase": false,
+    "independentRuntime": true
+  }
+}

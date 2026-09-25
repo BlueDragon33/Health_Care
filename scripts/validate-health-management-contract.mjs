@@ -6,6 +6,7 @@ const read = (relative) => fs.readFileSync(path.join(root, relative), "utf8");
 const fail = (message) => { throw new Error(`Health management contract failed: ${message}`); };
 
 const contract = read("app/health-management-contract.ts");
+const publicContract = JSON.parse(read("public/control/application-management.contract.json"));
 const route = read("app/api/control/contract/route.ts");
 const auth = read("app/control-auth.server.ts");
 const automationRoute = read("app/api/control/automation/route.ts");
@@ -48,6 +49,15 @@ for (const required of [
 
 for (const endpoint of ["/api/control/status", "/api/control/devices", "/api/control/device-commands", "/api/control/sessions", "/api/control/policy", "/api/control/automation", "/api/control/health-content", "/api/control/audit"]) {
   if (!contract.includes(`\"${endpoint}\"`)) fail(`thiếu endpoint ${endpoint}`);
+}
+
+if (publicContract.schema !== "application-management.contract/v1") fail("static public contract phải dùng Universal Contract v1");
+if (publicContract.application?.id !== "health-care" || publicContract.application?.category !== "Y tế") fail("static public contract phải tự nhận diện đúng Health_Care và phân loại Y tế");
+if (publicContract.application?.repository !== "BlueDragon33/Health_Care") fail("static public contract phải trỏ đúng repository canonical");
+if (publicContract.policy?.remoteAdminReady !== false || publicContract.policy?.credentialRequired !== true) fail("static public contract chỉ là metadata bootstrap, không được tự nhận remote admin ready");
+if (publicContract.boundary?.healthDataInControlPlane !== false || publicContract.boundary?.profileDataInControlPlane !== false) fail("static public contract phải giữ privacy boundary");
+for (const endpoint of ["/api/control/status", "/api/control/devices", "/api/control/device-commands"]) {
+  if (!Object.values(publicContract.endpoints ?? {}).includes(endpoint)) fail(`static public contract thiếu endpoint ${endpoint}`);
 }
 
 if (!/HEALTH_MANAGEMENT_CONTRACT/.test(route) || !/siteOrigin/.test(route)) fail("contract route phải trả contract + origin runtime");
