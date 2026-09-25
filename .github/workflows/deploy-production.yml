@@ -75,13 +75,18 @@ jobs:
       - name: Smoke test authenticated control plane
         run: |
           set -euo pipefail
+          CONTRACT_CODE="$(curl --silent --show-error --output /tmp/health-contract.json --write-out '%{http_code}' --max-time 20 "$HEALTH_PRODUCTION_ORIGIN/api/control/contract")"
+          [[ "$CONTRACT_CODE" == "200" ]] || { cat /tmp/health-contract.json; exit 1; }
           CODE="$(curl --silent --show-error --output /tmp/health-status.json --write-out '%{http_code}' --max-time 20 -H "Authorization: Bearer $HEALTH_CONTROL_SERVICE_SECRET" "$HEALTH_PRODUCTION_ORIGIN/api/control/status")"
           [[ "$CODE" == "200" ]] || { cat /tmp/health-status.json; exit 1; }
           node --input-type=module - <<'NODE'
           import fs from "node:fs";
+          const contract=JSON.parse(fs.readFileSync("/tmp/health-contract.json","utf8"));
+          if(contract.application!=="health-care" && contract.canonicalApplication!=="health-care") throw new Error("Health contract identity mismatch.");
+          if(contract.endpoints?.devices!=="/api/control/devices") throw new Error("Health device endpoint is missing.");
+          if(!Array.isArray(contract.capabilities) || !contract.capabilities.includes("device-access")) throw new Error("Health device-access contract is not ready.");
           const v=JSON.parse(fs.readFileSync("/tmp/health-status.json","utf8"));
-          if(v.application!=="health-care" && v.canonicalApplication!=="health-care") throw new Error("Health Production identity mismatch.");
-          const c=v.capabilities??{};
-          if(!c.deviceRegistry) throw new Error("Health device registry is not ready.");
+          if(v.application!=="child-health" && v.canonicalApplication!=="suc-khoe-y-te") throw new Error("Health Production status identity mismatch.");
+          if(!Array.isArray(v.capabilities) || !v.capabilities.includes("app-scoped-secret-v1")) throw new Error("Health scoped control secret is not active.");
           console.log("Health Production control smoke PASS.");
           NODE
