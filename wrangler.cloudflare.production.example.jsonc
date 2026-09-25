@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "health-care",
+  "main": "./worker/index.ts",
+  "compatibility_date": "2026-09-10",
+  "compatibility_flags": ["nodejs_compat"],
+  "workers_dev": true,
+  "assets": { "binding": "ASSETS", "run_worker_first": true },
+  "images": { "binding": "IMAGES" },
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "health-care-production-db",
+    "database_id": "__HEALTH_PRODUCTION_D1_DATABASE_ID__",
+    "migrations_dir": "drizzle"
+  }],
+  "vars": {
+    "APPLICATION_MANAGEMENT_ORIGIN": "__APPLICATION_MANAGEMENT_PRODUCTION_ORIGIN__",
+    "HEALTH_DEPLOYMENT_CHANNEL": "cloudflare-production",
+    "HEALTH_BUILD_REVISION": "__HEALTH_BUILD_REVISION__",
+    "HEALTH_BUILD_SOURCE": "BlueDragon33/Health_Care"
+  }
+}
