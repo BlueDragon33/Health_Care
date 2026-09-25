@@ -22,3 +22,21 @@ jobs:
           for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID HEALTH_PRODUCTION_D1_DATABASE_ID HEALTH_CONTROL_SERVICE_SECRET; do
             if [[ -n "${!key:-}" ]]; then echo "$key=PRESENT"; else echo "$key=MISSING"; fi
           done
+
+  audit-preview-environment:
+    runs-on: ubuntu-24.04
+    environment: health-preview
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+      HEALTH_PRODUCTION_D1_DATABASE_ID: ${{ secrets.HEALTH_PRODUCTION_D1_DATABASE_ID }}
+      HEALTH_CONTROL_SERVICE_SECRET: ${{ secrets.HEALTH_CONTROL_SERVICE_SECRET }}
+      APPLICATION_MANAGEMENT_PREVIEW_ORIGIN: ${{ vars.APPLICATION_MANAGEMENT_PREVIEW_ORIGIN }}
+      HEALTH_PREVIEW_ORIGIN: ${{ vars.HEALTH_PREVIEW_ORIGIN }}
+    steps:
+      - name: Report health-preview readiness only
+        shell: bash
+        run: |
+          for key in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID HEALTH_PRODUCTION_D1_DATABASE_ID HEALTH_CONTROL_SERVICE_SECRET APPLICATION_MANAGEMENT_PREVIEW_ORIGIN HEALTH_PREVIEW_ORIGIN; do
+            if [[ -n "${!key:-}" ]]; then echo "$key=PRESENT"; else echo "$key=MISSING"; fi
+          done
