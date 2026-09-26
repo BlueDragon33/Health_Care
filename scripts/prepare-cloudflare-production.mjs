@@ -12,7 +12,8 @@ if(!/^[A-Za-z0-9._-]{7,80}$/.test(revision)) throw new Error("HEALTH_BUILD_REVIS
 const rendered=fs.readFileSync(TEMPLATE,"utf8")
  .replace("__HEALTH_PRODUCTION_D1_DATABASE_ID__",prod)
  .replace("__APPLICATION_MANAGEMENT_PRODUCTION_ORIGIN__",origin("APPLICATION_MANAGEMENT_PRODUCTION_ORIGIN"))
- .replace("__HEALTH_BUILD_REVISION__",revision);
+ .replace("__HEALTH_BUILD_REVISION__",revision)
+ .replace("__HEALTH_ACCESS_MODE__",String(process.env.HEALTH_ACCESS_MODE||"managed").trim().toLowerCase()==="standalone"?"standalone":"managed");
 if(/__[A-Z0-9_]+__/.test(rendered)) throw new Error("Health production config còn placeholder.");
 fs.writeFileSync(TARGET,rendered,{mode:0o600});
 console.log(`Prepared ${TARGET} for revision ${revision}.`);
