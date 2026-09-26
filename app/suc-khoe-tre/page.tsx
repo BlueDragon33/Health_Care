@@ -1,4 +1,6 @@
 import HealthDeviceGate from "./device-gate";
+import HealthClient from "./health-client";
+import { staticHealthCourseDocument } from "../health-content.server";
 import "./health-framework.css";
 import "./health-polish.css";
 import "./growth-trend.css";
@@ -30,5 +32,15 @@ import "./reference-dashboard-icons.css";
 export const dynamic = "force-dynamic";
 
 export default function ChildHealthPage() {
-  return <HealthDeviceGate />;
+  const managedAccess = String(process.env.HEALTH_ACCESS_MODE || "standalone").trim().toLowerCase() === "managed";
+  if (managedAccess) return <HealthDeviceGate />;
+  return <HealthClient
+    initialCourse={staticHealthCourseDocument()}
+    device={{
+      deviceCode: "LOCAL-OPEN",
+      deviceType: "desktop",
+      editEnabled: true,
+      calendarEnabled: true,
+    }}
+  />;
 }
