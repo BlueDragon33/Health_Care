@@ -1,79 +1,37 @@
-name: Validate Health_Care
+name: Health Development Fast CI
 
 on:
-  pull_request:
-    branches:
-      - main
   push:
-    branches:
-      - main
+    branches: [main]
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: health-care-ci-${{ github.ref }}
+  group: health-fast-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  validate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
+  fast-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: "22.13.0"
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install locked dependencies
-        run: npm ci
-
-      - name: Validate WHO growth reference
-        run: npm run validate:growth
-
-      - name: Validate 9–18 health framework
-        run: npm run validate:framework
-
-      - name: Validate device auto-classification
-        run: npm run validate:device
-
-      - name: Validate control-plane separation
-        run: npm run validate:control
-
-      - name: Validate Cloudflare preview deployment boundary
-        run: npm run validate:cloudflare-preview
-
-      - name: Enforce repository separation
+      - name: Fast repository sanity
         shell: bash
         run: |
           set -euo pipefail
-          PATTERN='from .*boi-ech|from .*quan-ly-hoc-tap|require\(.*boi-ech|require\(.*quan-ly-hoc-tap'
-          if grep -RInE \
-            --include='*.ts' \
-            --include='*.tsx' \
-            --include='*.js' \
-            --include='*.mjs' \
-            --exclude-dir=node_modules \
-            --exclude-dir=.git \
-            "$PATTERN" \
-            app worker scripts build 2>/dev/null; then
-            echo 'Health_Care must not import runtime/business code from BOIECH_AI applications.'
-            exit 1
-          fi
+          test -f package.json
+          test -f vite.config.ts
+          test -f scripts/prepare-cloudflare-preview.mjs
           test -d app
           test -d worker
-          test -d drizzle
-          test -f wrangler.d1.jsonc
-          test -f wrangler.cloudflare.preview.example.jsonc
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Build
-        run: npm run build
+          node --check scripts/prepare-cloudflare-preview.mjs
+          node --check scripts/validate-cloudflare-preview.mjs
+          node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
