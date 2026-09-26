@@ -28,6 +28,7 @@ jobs:
       HEALTH_CONTROL_SERVICE_SECRET: ${{ secrets.HEALTH_CONTROL_SERVICE_SECRET }}
       APPLICATION_MANAGEMENT_PRODUCTION_ORIGIN: ${{ vars.APPLICATION_MANAGEMENT_PRODUCTION_ORIGIN }}
       HEALTH_PRODUCTION_ORIGIN: ${{ vars.HEALTH_PRODUCTION_ORIGIN }}
+      HEALTH_ACCESS_MODE: managed
     steps:
       - name: Require explicit production confirmation
         run: |
