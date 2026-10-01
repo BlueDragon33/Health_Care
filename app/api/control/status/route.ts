@@ -26,8 +26,9 @@ export async function GET(request: Request) {
     return controlResponse({
       ...status,
       ...build,
-      capabilities: [...status.capabilities, "app-scoped-secret-v1"] as const,
+      capabilities: [...status.capabilities, "app-scoped-secret-v1", "device-delete"] as const,
       controlAuth: { secretScope },
+      endpoints: { devices: "/api/control/devices", deviceDeletions: "/api/control/device-deletions" },
     }, 200, request);
   } catch (error) {
     return withControlCors(request, deviceErrorResponse(error));

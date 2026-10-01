@@ -126,7 +126,7 @@ async function listDevices() {
        FROM site_access_devices
       ORDER BY CASE WHEN environment_changed = 1 THEN 0 ELSE 1 END,
                CASE status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
-               last_seen_at DESC LIMIT 300`,
+               last_seen_at DESC`,
   ).all<Row>();
   return rows.results.map((row) => view(row, policy));
 }
@@ -135,7 +135,7 @@ export async function GET(request: Request) {
   try {
     const identity = await requireControlService(request);
     if (!canView(identity.role)) throw new DeviceAccessError("Không có quyền xem thiết bị Sức khỏe Y tế.", 403, "VIEWER_REQUIRED");
-    return controlResponse({ application: "child-health", devices: await listDevices() }, 200, request);
+    return controlResponse({ application: "child-health", deviceDelete: true, devices: await listDevices() }, 200, request);
   } catch (error) {
     return withControlCors(request, deviceErrorResponse(error));
   }
@@ -213,7 +213,7 @@ export async function POST(request: Request) {
     } else {
       throw new DeviceAccessError("Thao tác quản lý thiết bị không hợp lệ.", 400, "INVALID_DEVICE_ACTION");
     }
-    return controlResponse({ application: "child-health", devices: await listDevices() }, 200, request);
+    return controlResponse({ application: "child-health", deviceDelete: true, devices: await listDevices() }, 200, request);
   } catch (error) {
     return withControlCors(request, deviceErrorResponse(error));
   }
