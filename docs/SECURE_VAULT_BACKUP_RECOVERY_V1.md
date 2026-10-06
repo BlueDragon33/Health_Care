@@ -6,6 +6,11 @@ Cho phép người dùng chủ động sao lưu và khôi phục dữ liệu n�
 
 ## Ranh giới
 
+Constitution 1.2 dependency budget: `docs/DEPENDENCY_BUDGET.json`.
+
+Nếu người dùng chọn Google Drive hoặc dịch vụ file cloud khác để lưu backup, dịch vụ đó chỉ là **transport/storage cho artifact đã mã hóa client-side**. Không được upload PIN, derived key, plaintext health record hoặc bản export nhạy cảm chưa mã hóa. Cloud storage không trở thành canonical health authority và mất kết nối cloud không được làm mất khả năng đọc/ghi Vault local.
+
+
 - Local-only trong trình duyệt.
 - Không gọi Control Plane.
 - Không tự upload cloud.
