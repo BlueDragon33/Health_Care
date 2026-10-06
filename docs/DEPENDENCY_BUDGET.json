@@ -1,0 +1,191 @@
+{
+  "schemaVersion": "1.0.0",
+  "project": "BlueDragon33/Health_Care",
+  "blueprintLevel": "B5",
+  "constitutionPolicy": "blueprint-os:universal-century-grade@1.2.0",
+  "defaultPrinciple": "LOCAL_CANONICAL_SENSITIVE_DATA_OFFLINE_FIRST_ENCRYPTED_OPTIONAL_SYNC",
+  "canonicalDataRule": "Health/profile/Vault state remains on user-controlled local storage unless an explicitly approved purpose-built secure provider is introduced. Application Management and generic cloud productivity tools are not medical-data authorities.",
+  "dependencies": [
+    {
+      "id": "secure-local-vault",
+      "provider": "Browser IndexedDB + WebCrypto Secure Health Vault",
+      "runtimeClass": "LOCAL_CORE",
+      "costClass": "local-free",
+      "purpose": [
+        "highly-sensitive health record protection",
+        "offline private storage",
+        "profile-scoped encryption"
+      ],
+      "dataBoundary": "user device",
+      "canonicalState": "allowed for Vault-protected sensitive health payloads",
+      "degradedBehavior": "baseline path; no network required",
+      "exportPath": [
+        "encrypted Secure Vault backup v1"
+      ],
+      "replacementPath": "future local encrypted store preserving profile/AAD and migration contract"
+    },
+    {
+      "id": "local-app-state",
+      "provider": "Browser local storage / IndexedDB according to domain contract",
+      "runtimeClass": "LOCAL_CORE",
+      "costClass": "local-free",
+      "purpose": [
+        "profile registry",
+        "non-vault learner/family health UI state",
+        "offline use"
+      ],
+      "dataBoundary": "user device",
+      "canonicalState": "allowed only according to existing privacy/storage contracts",
+      "degradedBehavior": "baseline path",
+      "exportPath": [
+        "profile-scoped exports",
+        "encrypted backup for sensitive domains"
+      ],
+      "replacementPath": "versioned local persistence adapter"
+    },
+    {
+      "id": "application-management",
+      "provider": "Application Management control plane",
+      "runtimeClass": "OPTIONAL_SYNC",
+      "costClass": "local-or-user-hosted",
+      "purpose": [
+        "device/app access coordination",
+        "privacy-safe management metadata"
+      ],
+      "dataBoundary": "device/access/control metadata only",
+      "canonicalState": "forbidden for health payload, Vault ciphertext, PIN, derived key, private notes",
+      "degradedBehavior": "Health app remains usable in standalone/local-first mode when policy allows",
+      "exportPath": [
+        "management metadata only"
+      ],
+      "replacementPath": "standalone local mode or another compatible management adapter"
+    },
+    {
+      "id": "chatgpt-ai",
+      "provider": "ChatGPT / AI assistant",
+      "runtimeClass": "OPTIONAL_INTELLIGENCE",
+      "costClass": "user-selected",
+      "purpose": [
+        "explanation",
+        "planning assistance",
+        "non-canonical advisory support"
+      ],
+      "dataBoundary": "only user-explicit context; no automatic Vault exfiltration",
+      "canonicalState": "forbidden for diagnosis truth, medication truth, profile authority, mastery-like health status",
+      "degradedBehavior": "all recordkeeping, reminders, Vault and exports remain usable without AI",
+      "exportPath": [
+        "user-created notes/artifacts where explicitly saved"
+      ],
+      "replacementPath": "non-AI workflow or another advisory provider"
+    },
+    {
+      "id": "chatgpt-sites",
+      "provider": "ChatGPT Sites",
+      "runtimeClass": "OPTIONAL_PUBLISH",
+      "costClass": "user-selected",
+      "purpose": [
+        "hosted web access",
+        "platform-authenticated access where configured"
+      ],
+      "dataBoundary": "app runtime and explicit remote state only; Secure Vault remains client-side",
+      "canonicalState": "not required for LOCAL_STABLE",
+      "degradedBehavior": "local app remains usable; hosted access unavailable",
+      "exportPath": [
+        "source-controlled app",
+        "database export where applicable"
+      ],
+      "replacementPath": "another authenticated host or local-only use"
+    },
+    {
+      "id": "cloudflare-workers-d1",
+      "provider": "Cloudflare Workers / D1",
+      "runtimeClass": "OPTIONAL_PUBLISH",
+      "costClass": "free-tier-or-paid-optional",
+      "purpose": [
+        "preview/production track",
+        "remote non-Vault app/control state where explicitly modeled"
+      ],
+      "dataBoundary": "no Secure Vault PIN/key/plaintext; no implicit copy of highly-sensitive local records",
+      "canonicalState": "provider-specific remote state must be exportable and purpose-limited",
+      "degradedBehavior": "local Vault/profile functionality remains available; remote-only features may be unavailable",
+      "exportPath": [
+        "D1/SQL export",
+        "portable domain export"
+      ],
+      "replacementPath": "local/other managed adapter"
+    },
+    {
+      "id": "google-drive-backup",
+      "provider": "Google Drive",
+      "runtimeClass": "OPTIONAL_SYNC",
+      "costClass": "free-tier-or-user-plan",
+      "purpose": [
+        "user-initiated encrypted backup storage",
+        "cross-device backup transport"
+      ],
+      "dataBoundary": "encrypted backup artifact only for sensitive Vault content; no PIN or derived key",
+      "canonicalState": "forbidden as sole health-record truth",
+      "degradedBehavior": "local records remain usable; backup/sync deferred",
+      "exportPath": [
+        "existing encrypted JSON backup format"
+      ],
+      "replacementPath": "local file backup, USB, another file-storage adapter",
+      "status": "planned-optional"
+    },
+    {
+      "id": "google-sheets",
+      "provider": "Google Sheets",
+      "runtimeClass": "OPTIONAL_SYNC",
+      "costClass": "free-tier-or-user-plan",
+      "purpose": [
+        "optional non-sensitive aggregate/report projection only if explicitly enabled"
+      ],
+      "dataBoundary": "no raw profile health records, medications, symptoms, private notes, child health timelines, Vault ciphertext metadata that leaks sensitive meaning",
+      "canonicalState": "forbidden",
+      "degradedBehavior": "no effect on core app",
+      "exportPath": [
+        "CSV only for approved non-sensitive projections"
+      ],
+      "replacementPath": "local report/export",
+      "status": "discouraged-for-sensitive-data"
+    },
+    {
+      "id": "google-apps-script",
+      "provider": "Google Apps Script",
+      "runtimeClass": "OPTIONAL_SYNC",
+      "costClass": "free-tier-or-user-plan",
+      "purpose": [
+        "optional lightweight backup coordination only"
+      ],
+      "dataBoundary": "must not receive Vault PIN/key/plaintext or become authorization authority",
+      "canonicalState": "forbidden",
+      "degradedBehavior": "manual/local backup remains available",
+      "exportPath": [
+        "portable coordination protocol"
+      ],
+      "replacementPath": "manual backup or another sync adapter",
+      "status": "planned-optional"
+    }
+  ],
+  "forbiddenRemoteData": [
+    "Secure Vault PIN",
+    "derived encryption keys",
+    "decrypted highly-sensitive health payloads",
+    "raw private sensitive notes",
+    "raw medication/allergy/symptom records in Google Sheets",
+    "raw child health timeline in Google Sheets",
+    "Application Management audit containing health payload",
+    "device/control secrets in Drive or Sheets"
+  ],
+  "acceptance": {
+    "sovereigntyGateRequires": [
+      "core Health_Care recordkeeping and Secure Vault remain usable without optional cloud sync",
+      "sensitive cloud backup is encrypted client-side before upload",
+      "no remote provider can silently become canonical health authority",
+      "AI remains advisory and non-canonical",
+      "export/restore path is tested for encrypted Vault backups",
+      "optional provider outage does not destroy local profile/Vault state"
+    ],
+    "productionAuthority": "separate-explicit-release-gate"
+  }
+}

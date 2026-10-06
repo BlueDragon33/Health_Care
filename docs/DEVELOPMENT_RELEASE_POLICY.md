@@ -1,5 +1,12 @@
 # Shared Development / Release Policy
 
+Universal Constitution: `blueprint-os:universal-century-grade@1.2.0`
+
+Dependency budget: `docs/DEPENDENCY_BUDGET.json`
+
+Health_Care applies the operational-sovereignty pillar with a stricter B5 rule: sensitive health data is local/encrypted by default, AI is advisory only, and cloud/Drive/Apps Script are optional adapters rather than health authority.
+
+
 ## Default now: Development Live Mode
 
 This repository is in the shared BlueDragon33 Development Live Mode.

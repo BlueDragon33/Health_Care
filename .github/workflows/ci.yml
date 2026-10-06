@@ -34,4 +34,6 @@ jobs:
           test -d worker
           node --check scripts/prepare-cloudflare-preview.mjs
           node --check scripts/validate-cloudflare-preview.mjs
+          node --check scripts/validate-constitution-1.2-sovereignty.mjs
+          node scripts/validate-constitution-1.2-sovereignty.mjs
           node -e "JSON.parse(require('fs').readFileSync('package.json','utf8'))"
