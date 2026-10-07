@@ -22,12 +22,17 @@
     "audit": true,
     "contentReview": true,
     "payments": false,
-    "reports": false
+    "reports": false,
+    "deviceAutoApproval": true,
+    "deviceAutoBlockPending": true,
+    "automationIdempotentCommands": true,
+    "automationOptimisticConcurrency": true
   },
   "endpoints": {
     "status": "/api/control/status",
     "devices": "/api/control/devices",
-    "deviceCommands": "/api/control/device-commands"
+    "deviceCommands": "/api/control/device-commands",
+    "automation": "/api/control/automation"
   },
   "policy": {
     "remoteAdminReady": false,

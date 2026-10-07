@@ -60,3 +60,47 @@ export const HEALTH_MANAGEMENT_CONTRACT = {
 } as const;
 
 export type HealthManagementContract = typeof HEALTH_MANAGEMENT_CONTRACT;
+
+
+export const HEALTH_UNIVERSAL_MANAGEMENT_CONTRACT = {
+  schema: "application-management.contract/v1",
+  protocol: "application-management-health-control-v1",
+  application: {
+    id: "health-care",
+    name: "Sức khỏe Y tế",
+    category: "Y tế",
+    version: "3",
+  },
+  capabilities: {
+    deviceRegistry: true,
+    deviceApproval: true,
+    deviceBlock: true,
+    deviceUnblock: false,
+    deviceEditPermission: true,
+    deviceIdempotentCommands: true,
+    optimisticConcurrency: true,
+    deviceAutoApproval: true,
+    deviceAutoBlockPending: true,
+    automationIdempotentCommands: true,
+    automationOptimisticConcurrency: true,
+    sessions: true,
+    audit: true,
+    contentReview: true,
+    payments: false,
+    reports: false,
+    webLaunch: true,
+  },
+  policy: {
+    remoteAdminReady: true,
+    credentialRequired: true,
+    credentialEnv: "HEALTH_CONTROL_SERVICE_SECRET",
+    localFirst: false,
+    productionRuntimeReady: true,
+  },
+  endpoints: {
+    status: "/api/control/status",
+    devices: "/api/control/devices",
+    deviceCommands: "/api/control/device-commands",
+    automation: "/api/control/automation",
+  },
+} as const;
