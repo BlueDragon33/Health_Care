@@ -1,0 +1,76 @@
+{
+  "schemaVersion": "1.0.0",
+  "policyId": "blueprint-os:universal-century-grade",
+  "policyVersion": "1.2.0",
+  "projectId": "project:health-care",
+  "blueprintLevel": "B5",
+  "posture": "LOCAL_CANONICAL_SENSITIVE_DATA",
+  "complianceState": "MIGRATION_REQUIRED",
+  "canonicalAuthority": {
+    "healthRecords": "application-owned-local-or-purpose-built-trusted-store",
+    "clinicalTruth": "human-clinician-and-canonical-medical-records-not-ai",
+    "ai": "optional-advisory-intelligence-only",
+    "remoteBackup": "optional-encrypted-copy-only"
+  },
+  "dependencies": [
+    {
+      "id": "local-runtime-and-local-store",
+      "class": "LOCAL_CORE",
+      "costClass": "local-free",
+      "purpose": "Core personal health record viewing/editing and offline/degraded operation",
+      "dataBoundary": "user-controlled device",
+      "offlineBehavior": "core non-network workflows remain available",
+      "exitPath": "portable encrypted export/import"
+    },
+    {
+      "id": "cloudflare-workers-d1",
+      "class": "OPTIONAL_PUBLISH",
+      "costClass": "free-tier-or-optional-paid",
+      "purpose": "optional hosted runtime/persistence",
+      "dataBoundary": "only when explicitly configured and accepted for health data",
+      "offlineBehavior": "local core must remain usable when hosted runtime is unavailable",
+      "exitPath": "documented export/migration to local or alternate trusted store"
+    },
+    {
+      "id": "google-drive-or-equivalent",
+      "class": "OPTIONAL_SYNC",
+      "costClass": "free-or-optional-paid",
+      "purpose": "optional encrypted backup/export",
+      "dataBoundary": "encrypted archive or explicitly sanitized export only",
+      "offlineBehavior": "no effect on local canonical operation",
+      "exitPath": "ordinary encrypted files can move to another storage provider"
+    },
+    {
+      "id": "google-sheets",
+      "class": "FORBIDDEN_FOR_RAW_SENSITIVE_STATE",
+      "costClass": "n/a",
+      "purpose": "at most sanitized non-sensitive reporting projection",
+      "dataBoundary": "no raw health records, credentials, sessions, identifiers or secrets",
+      "offlineBehavior": "not part of core runtime",
+      "exitPath": "local report/export"
+    },
+    {
+      "id": "ai-provider",
+      "class": "OPTIONAL_INTELLIGENCE",
+      "costClass": "optional",
+      "purpose": "explanation, summarization, appointment preparation and non-authoritative assistance",
+      "dataBoundary": "only explicitly selected context with minimum necessary disclosure",
+      "offlineBehavior": "health records and core app workflows remain usable without AI",
+      "exitPath": "disable or replace provider without changing canonical health state"
+    }
+  ],
+  "forbidden": [
+    "ai-owned-diagnosis-or-canonical-medical-truth",
+    "plaintext-health-backup-in-drive",
+    "raw-health-records-in-google-sheets",
+    "secrets-or-session-tokens-in-drive-or-sheets",
+    "mandatory-paid-provider-for-basic-record-access",
+    "cloud-only-canonical-copy-without-export-and-restore"
+  ],
+  "migrationBlockers": [
+    "Prove portable encrypted export/restore for sensitive records.",
+    "Prove local or clearly degraded core operation when optional hosted providers are unavailable.",
+    "Document explicit consent/data-boundary behavior before enabling any remote backup or AI disclosure."
+  ],
+  "productionAuthority": "separate-explicit-release-gate"
+}

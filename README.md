@@ -106,3 +106,12 @@ docs/       architecture, audit, privacy, release checklist
 Repo này được tách từ `BlueDragon33/BOIECH_AI/suc-khoe-tre/`. Xem `MIGRATION_SOURCE.md`.
 
 Repo canonical của Trung tâm hiện là `BlueDragon33/Application-Management`; `BOIECH_AI` không còn là nguồn quản trị Health_Care.
+
+
+## Operational sovereignty
+
+This repository adopts **Universal Constitution 1.2.0** at Blueprint Level **B5**.
+
+Health data is treated as sensitive canonical state. Core personal-record workflows must remain local-first or have an explicit degraded mode; AI is advisory only; Google Drive or equivalent may be used only for optional encrypted backup/export; Google Sheets must not hold raw health records, credentials, sessions or secrets.
+
+Canonical dependency posture: `.blueprint/dependency-budget.json`.
