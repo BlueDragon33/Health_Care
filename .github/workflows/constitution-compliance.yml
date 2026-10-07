@@ -12,3 +12,46 @@ permissions:
 jobs:
   constitution:
     uses: BlueDragon33/Software-Blueprint-Hub/.github/workflows/constitution-compliance.yml@main
+
+  dependency-sovereignty:
+    name: Constitution 1.2 health-data dependency sovereignty
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - name: Validate Health_Care dependency budget
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          adoption = json.loads(Path(".blueprint/constitution-adoption.json").read_text())
+          budget = json.loads(Path(".blueprint/dependency-budget.json").read_text())
+
+          assert adoption["policyVersion"] == "1.2.0"
+          assert "operational-sovereignty-dependency-minimization" in adoption["inheritedPillars"]
+          assert budget["policyVersion"] == "1.2.0"
+          assert budget["projectId"] == adoption["projectId"] == "project:health-care"
+          assert budget["blueprintLevel"] == "B5"
+          assert budget["posture"] == "LOCAL_CANONICAL_SENSITIVE_DATA"
+          assert budget["complianceState"] == "MIGRATION_REQUIRED"
+          assert budget["productionAuthority"] == "separate-explicit-release-gate"
+          assert len(budget.get("migrationBlockers", [])) >= 3
+
+          deps = {item["id"]: item for item in budget["dependencies"]}
+          assert deps["local-runtime-and-local-store"]["class"] == "LOCAL_CORE"
+          assert deps["google-sheets"]["class"] == "FORBIDDEN_FOR_RAW_SENSITIVE_STATE"
+          assert deps["ai-provider"]["class"] == "OPTIONAL_INTELLIGENCE"
+
+          for dep in budget["dependencies"]:
+              assert dep.get("offlineBehavior")
+              assert dep.get("exitPath")
+
+          forbidden = set(budget["forbidden"])
+          assert "plaintext-health-backup-in-drive" in forbidden
+          assert "raw-health-records-in-google-sheets" in forbidden
+          assert "cloud-only-canonical-copy-without-export-and-restore" in forbidden
+          assert "ai-owned-diagnosis-or-canonical-medical-truth" in forbidden
+
+          print("Health_Care Constitution 1.2 dependency sovereignty: PASS")
+          PY
