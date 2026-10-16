@@ -1,0 +1,31 @@
+name: Health Offline Deployment Boundary
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/live-development-deploy.yml'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/deploy-production.yml'
+      - '.github/workflows/offline-deployment-boundary.yml'
+      - 'tests/offline-deployment-boundary.test.mjs'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/live-development-deploy.yml'
+      - '.github/workflows/deploy.yml'
+      - '.github/workflows/deploy-production.yml'
+      - '.github/workflows/offline-deployment-boundary.yml'
+      - 'tests/offline-deployment-boundary.test.mjs'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  boundary:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify all Health online deployment jobs are dormant
+        run: node --test tests/offline-deployment-boundary.test.mjs
