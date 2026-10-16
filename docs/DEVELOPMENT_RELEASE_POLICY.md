@@ -3,6 +3,8 @@
 Universal Constitution: `blueprint-os:universal-century-grade@1.3.0` (source: BlueDragon33/Software-Blueprint-Hub).
 Dependency budget: `docs/DEPENDENCY_BUDGET.json`; sensitive local data remains canonical and separately protected.
 
+The **operational-sovereignty pillar** requires local-canonical sensitive health state and export/restore; **AI is advisory only**, never diagnostic or medical truth. These properties require real privacy and disconnected runtime evidence, not a checked version number.
+
 ## Development mode — OFFLINE-FIRST / LOCAL-ONLY
 
 - Merges/pushes to `main`, passing CI, and manual workflow dispatch are NOT online publication approval.
