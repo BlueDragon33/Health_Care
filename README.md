@@ -34,12 +34,12 @@ Trong giai đoạn chuyển tiếp, Health_Care vẫn chấp nhận vé legacy `
 
 ## Cloudflare Preview
 
-Cloudflare Preview là đường triển khai mới được ưu tiên trước khi lên production. Preview dùng:
+Cloudflare Preview hiện **tạm khóa** trong giai đoạn phát triển offline-first; chỉ mở lại sau review, nghiệm thu xuất xưởng và phê duyệt riêng. Preview dùng:
 
 - Worker `health-care-preview`;
 - D1 `health-care-preview-db` riêng;
 - `workers.dev` được phép dùng trong giai đoạn đầu, không cần tên miền riêng;
-- workflow manual-only `.github/workflows/deploy.yml`;
+- workflow `.github/workflows/deploy.yml` đang có job fail-closed, không thể publish;
 - không dùng D1 production hiện tại;
 - không tự chạy cron auto-block trong giai đoạn bootstrap preview.
 
@@ -76,6 +76,8 @@ npm ci
 npm run dev
 ```
 
+**Offline-first:** cài dependencies khi có mạng, sau đó kiểm thử runtime khi ngắt mạng; không đồng nhất chạy localhost với Offline PASS. Production/Preview Cloudflare đều đóng băng; không tự publish trên main.
+
 ## Gate bắt buộc
 
 ```bash
@@ -110,7 +112,7 @@ Repo canonical của Trung tâm hiện là `BlueDragon33/Application-Management`
 
 ## Operational sovereignty
 
-This repository adopts **Universal Constitution 1.2.0** at Blueprint Level **B5**.
+This repository inherits **Universal Constitution 1.3.0** (policy-level adoption, not release acceptance) at Blueprint Level **B5**.
 
 Health data is treated as sensitive canonical state. Core personal-record workflows must remain local-first or have an explicit degraded mode; AI is advisory only; Google Drive or equivalent may be used only for optional encrypted backup/export; Google Sheets must not hold raw health records, credentials, sessions or secrets.
 
