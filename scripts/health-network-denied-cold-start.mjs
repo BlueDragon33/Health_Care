@@ -13,6 +13,7 @@ if(process.env.HEALTH_OFFLINE_NETWORK_DENIED!=="1"){
 const origin="http://127.0.0.1:4173";
 const app=spawn("npm",["run","dev","--","--host","127.0.0.1","--port","4173"],{
  cwd:process.cwd(),env:{...process.env,LOCAL_CONTROL_PLANE:"1",LOCAL_CONTROL_ALLOW_LAN:"false"},
+ detached:true,
  stdio:["ignore","pipe","pipe"]
 });
 let logs="";
@@ -53,6 +54,8 @@ try{
  console.error("Server diagnostics (trimmed):\n"+logs.slice(-8500));
  process.exitCode=1;
 }finally{
- app.kill("SIGTERM");
+ try{if(app.pid)process.kill(-app.pid,"SIGTERM")}catch{app.kill("SIGTERM")}
+ app.stdout.destroy();
+ app.stderr.destroy();
  await Promise.race([new Promise(resolve=>app.once("exit",resolve)),sleep(4000)]);
 }
