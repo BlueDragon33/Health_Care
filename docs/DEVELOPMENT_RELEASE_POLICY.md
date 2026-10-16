@@ -1,26 +1,22 @@
 # Shared Development / Release Policy
 
-Universal Constitution: `blueprint-os:universal-century-grade@1.2.0`
+Universal Constitution: `blueprint-os:universal-century-grade@1.3.0` (source: BlueDragon33/Software-Blueprint-Hub).
+Dependency budget: `docs/DEPENDENCY_BUDGET.json`; sensitive local data remains canonical and separately protected.
 
-Dependency budget: `docs/DEPENDENCY_BUDGET.json`
+## Development mode — OFFLINE-FIRST / LOCAL-ONLY
 
-Health_Care applies the operational-sovereignty pillar with a stricter B5 rule: sensitive health data is local/encrypted by default, AI is advisory only, and cloud/Drive/Apps Script are optional adapters rather than health authority.
+- Merges/pushes to `main`, passing CI, and manual workflow dispatch are NOT online publication approval.
+- Health core health records, encrypted Vault, reminders and saved progress must be tested locally with network denied; any absent offline evidence remains `UNVERIFIED`.
+- The two remote Cloudflare publish jobs (`live-development-deploy.yml`, `deploy.yml`) are dormant with fail-closed job guards, preserving source for a separately reviewed future release.
+- Install/build dependencies may use Internet before test; local app runtime must not require it for core functions.
+- Application Management integration, hosted D1, AI, cloud backup, and remote auth are optional adapters and cannot become mandatory for core local use or leak sensitive records.
+- Preserve the production D1 database and all existing live URLs; decommissioning requires separate owner authorization.
+- Real offline tests require network-disconnected cold start, browsing vital routes, local save/reload and encrypted export/restore, plus an evidence-bound exact SHA.
+- Approval / Managed OFF: standalone local; Approval / Managed ON: explicit separate management integration after the associated gates.
 
+## Release Mode — factory exit only
 
-## Default now: Development Live Mode
-
-This repository is in the shared BlueDragon33 Development Live Mode.
-
-- `main` is the live development source when a live host is configured.
-- Use the dedicated lightweight **Live Development Deploy** path; do not require Preview promotion.
-- Access defaults to **standalone/local-first**.
-- Application Management is optional coordination/launch/sync infrastructure, not a mandatory gate for opening the app.
-- Device approval, remote-admin authorization and central control are optional during active development.
-- The app must remain usable as a local web-app whenever its own runtime supports local execution.
-- Internet should mainly be needed for publishing, optional access-right lookup, synchronization and remote features.
-- Missing central-management connectivity must not prevent the core app from opening in standalone development mode.
-- Heavy CI, browser suites, integration gates and protected Production promotion remain manual during active development.
-- Never treat a skipped optional sync/management bridge as a failed local app.
+Do not publish until a named Health release has offline acceptance evidence, B5 privacy/backup gates, applicable independent review, secure schema/data migration, exact artifact SHA and explicit future owner Production release authority. No automatic publish is enabled by this policy.
 
 ## Application Management access switch
 
@@ -44,6 +40,6 @@ At release time:
 6. Deploy using the protected Release/Production workflow.
 7. Run post-deploy smoke/read-back checks.
 8. Record the release revision/version.
-9. Return to Development Live Mode unless instructed otherwise.
+9. Return to OFFLINE-FIRST / LOCAL-ONLY development unless a separate authorization explicitly changes it.
 
-The Release workflow must remain available even while Development Live Mode is the default.
+The Release workflow must remain available even while offline-first Development Mode is the default.
