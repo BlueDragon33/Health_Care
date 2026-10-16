@@ -5,12 +5,14 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/live-development-deploy.yml'
+      - '.github/workflows/deploy.yml'
       - 'tests/governance/offline-publication-hold.test.mjs'
       - '.github/workflows/offline-publication-hold-ci.yml'
   push:
     branches: [main]
     paths:
       - '.github/workflows/live-development-deploy.yml'
+      - '.github/workflows/deploy.yml'
       - 'tests/governance/offline-publication-hold.test.mjs'
       - '.github/workflows/offline-publication-hold-ci.yml'
 
