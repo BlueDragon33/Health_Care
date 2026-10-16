@@ -1,0 +1,64 @@
+{
+  "schemaVersion": "1.0.0",
+  "scope": "project:health-care",
+  "reviewScope": "SOURCE_LEVEL_CONSTITUTION_INHERITANCE_ONLY",
+  "sourceAuthority": {
+    "repo": "BlueDragon33/Software-Blueprint-Hub",
+    "policy": "blueprint-os:universal-century-grade",
+    "version": "1.3.0",
+    "normativeDocument": "docs/UNIVERSAL-CONSTITUTION.md",
+    "machineContract": "control/universal-constitution.contract.json",
+    "observedHubMain": "aac1e26ea8491ca5bd8f571241935cb7ee59bc4a"
+  },
+  "project": {
+    "blueprintLevel": "B5",
+    "inheritedPillars": 7,
+    "waivers": 0,
+    "authority": "canonical-quality-gates",
+    "productionAuthority": "separate-explicit-release-gate"
+  },
+  "verifiedContractSources": [
+    ".blueprint/constitution-adoption.json",
+    ".blueprint/dependency-budget.json",
+    "docs/DEPENDENCY_BUDGET.json",
+    "docs/DEVELOPMENT_RELEASE_POLICY.md",
+    "scripts/validate-constitution-1.2-sovereignty.mjs"
+  ],
+  "observedImplementationEvidence": [
+    {
+      "pillar": "operational-sovereignty-dependency-minimization",
+      "code": "app/suc-khoe-tre/health-secure-vault.ts",
+      "test": "scripts/validate-secure-vault-backup.mjs",
+      "claim": "local encrypted backup contract and no required direct fetch in backup engine"
+    },
+    {
+      "pillar": "fortress-security-disaster-resilience",
+      "code": "app/suc-khoe-tre/health-secure-vault.ts",
+      "test": "scripts/validate-secure-vault.mjs",
+      "claim": "cryptographic storage boundary structure"
+    },
+    {
+      "pillar": "long-term-durability",
+      "code": "app/suc-khoe-tre/health-secure-vault.ts",
+      "test": "scripts/validate-secure-vault-backup.mjs",
+      "claim": "explicit export and restore invariants"
+    }
+  ],
+  "pendingEvidence": [
+    "Actual health app cold start with external networking disabled",
+    "User-visible core routing and assets actually working disconnected",
+    "Real local persisted private record save/restart and restore under denied network",
+    "Independent manual/privacy/B5 acceptance on exact runnable build",
+    "Future named-application online Production release approval"
+  ],
+  "truthBoundary": {
+    "structureAdoptedDoesNotMeanProductAccepted": true,
+    "ciSuccessCannotReplaceIndependentReviewer": true,
+    "offlineRuntime": "UNVERIFIED",
+    "productAcceptance": "UNVERIFIED",
+    "releaseGate": "BLOCKED_PENDING_REVIEW_AND_OFFLINE_QA",
+    "remotePublish": "DORMANT",
+    "priorProductionUrls": "NOT_REVOKED"
+  },
+  "notes": "Active 1.3 rule inheritance can be checked from source and CI; optional functionality and runtime/offline acceptance must not be inferred. Neither this record nor an adoption manifest is an Owner ratification event."
+}

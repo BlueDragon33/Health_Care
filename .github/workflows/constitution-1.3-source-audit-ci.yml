@@ -1,0 +1,53 @@
+name: Health 1.3 Source Adoption Audit CI
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.blueprint/constitution-adoption.json'
+      - '.blueprint/dependency-budget.json'
+      - '.github/workflows/constitution-compliance.yml'
+      - 'docs/DEPENDENCY_BUDGET.json'
+      - 'docs/DEVELOPMENT_RELEASE_POLICY.md'
+      - 'docs/CONSTITUTION-1.3-HEALTH-ADOPTION-AUDIT.json'
+      - 'tests/governance/health-constitution-1.3-alignment.test.mjs'
+      - 'scripts/validate-constitution-1.2-sovereignty.mjs'
+      - '.github/workflows/constitution-1.3-source-audit-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.blueprint/constitution-adoption.json'
+      - '.blueprint/dependency-budget.json'
+      - '.github/workflows/constitution-compliance.yml'
+      - 'docs/DEPENDENCY_BUDGET.json'
+      - 'docs/DEVELOPMENT_RELEASE_POLICY.md'
+      - 'docs/CONSTITUTION-1.3-HEALTH-ADOPTION-AUDIT.json'
+      - 'tests/governance/health-constitution-1.3-alignment.test.mjs'
+      - 'scripts/validate-constitution-1.2-sovereignty.mjs'
+      - '.github/workflows/constitution-1.3-source-audit-ci.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  source-and-privacy-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22.13.0'
+          package-manager-cache: false
+      - name: Audit 1.3 inherited pillars, data boundaries and offline release prohibition
+        run: |
+          node --test tests/governance/health-constitution-1.3-alignment.test.mjs
+          node scripts/validate-constitution-1.2-sovereignty.mjs
+      - name: Check Secure Vault crypto, backup and restore invariants
+        run: |
+          node scripts/validate-secure-vault.mjs
+          node scripts/validate-secure-vault-backup.mjs
+      - name: Guard status accuracy
+        run: echo "SOURCE ADOPTION CHECK ONLY. OFFLINE RUNTIME, B5 human review and Production remain UNVERIFIED."

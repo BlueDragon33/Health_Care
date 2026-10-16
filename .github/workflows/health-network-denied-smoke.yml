@@ -1,0 +1,48 @@
+name: Health Network-Denied Local Cold Start
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/health-network-denied-cold-start.mjs'
+      - '.github/workflows/health-network-denied-smoke.yml'
+      - 'vite.config.ts'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.blueprint/constitution-adoption.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  isolated-runtime-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 13
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22.13.0'
+          package-manager-cache: false
+      - name: Install dependencies (network allowed before runtime isolation)
+        run: npm ci --no-audit --no-fund
+      - name: Download local runtime container (build time only)
+        run: docker pull node:22-bookworm-slim
+      - name: Cold-start real Health runtime with external network fully disabled
+        run: |
+          docker run --rm \
+            --network none \
+            --user "$(id -u):$(id -g)" \
+            --memory 3g \
+            --cpus 2 \
+            -v "$GITHUB_WORKSPACE:/workspace" \
+            -w /workspace \
+            -e HEALTH_OFFLINE_NETWORK_DENIED=1 \
+            -e CI=1 \
+            node:22-bookworm-slim \
+            node scripts/health-network-denied-cold-start.mjs
+      - name: Explicit limited scope
+        run: echo "Network-denied cold start is NOT private record persistence, restore, user UX or Product PASS."
