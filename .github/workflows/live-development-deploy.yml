@@ -1,9 +1,7 @@
 name: Health Live Development Deploy
 
+# Offline-first: keep publication workflow dormant; code merges are not release events.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -15,6 +13,8 @@ concurrency:
 
 jobs:
   deploy_live:
+    # DORMANT: reactivation requires named-app release evidence and explicit owner approval.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment:
