@@ -9,6 +9,7 @@ const docBudget=json("docs/DEPENDENCY_BUDGET.json");
 const audit=json("docs/CONSTITUTION-1.3-HEALTH-ADOPTION-AUDIT.json");
 const policy=text("docs/DEVELOPMENT_RELEASE_POLICY.md");
 const preview=text(".github/workflows/deploy.yml");
+const production=text(".github/workflows/deploy-production.yml");
 const live=text(".github/workflows/live-development-deploy.yml");
 test("1.3 inheritance matches actual ratified central contract and keeps sensitive B5 authority protected",()=>{
  assert.equal(manifest.schemaVersion,"1.0.0");
@@ -62,7 +63,7 @@ test("honest adoption audit does not imply production, offline acceptance or new
  }
 });
 test("Cloudflare published Preview and Live are fail-closed even on workflow dispatch",()=>{
- for(const [id,wf] of [["deploy-preview",preview],["deploy_live",live]]){
+ for(const [id,wf] of [["deploy-preview",preview],["deploy_live",live],["deploy-production",production]]){
   const events=wf.slice(wf.indexOf("\non:"),wf.indexOf("\npermissions:"));
   assert.doesNotMatch(events,/\bpush:|\bissue_comment:|\bworkflow_run:/);
   assert.match(wf,new RegExp("^  "+id+":\\n(?:    #[^\\n]*\\n)*    if: \\$\\{\\{ false \\}\\}","m"));
