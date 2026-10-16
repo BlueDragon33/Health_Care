@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   deploy-production:
+    # DORMANT: offline-first release embargo pending separate Health factory acceptance.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     environment: health-production
