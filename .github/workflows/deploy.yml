@@ -12,6 +12,8 @@ concurrency:
 
 jobs:
   deploy-preview:
+    # Dormant while all non-exempt applications remain offline-only.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment: health-preview
