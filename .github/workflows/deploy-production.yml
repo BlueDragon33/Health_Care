@@ -17,6 +17,8 @@ concurrency:
 
 jobs:
   deploy-production:
+    # Dormant: separate owner-authorized future online release required.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     environment: health-production

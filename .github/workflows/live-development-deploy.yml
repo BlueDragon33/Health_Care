@@ -1,9 +1,7 @@
 name: Health Live Development Deploy
 
+# Offline-First: prevent remote runtime publication on source-code changes.
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -15,6 +13,8 @@ concurrency:
 
 jobs:
   deploy_live:
+    # Explicit offline development hold. Re-enable only through reviewed future release policy.
+    if: ${{ false }}
     runs-on: ubuntu-24.04
     timeout-minutes: 18
     environment:
