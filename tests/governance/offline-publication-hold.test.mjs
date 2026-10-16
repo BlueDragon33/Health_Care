@@ -9,6 +9,11 @@ const workflows=[
     "marker": "Deploy live development Worker"
   },
   {
+    "path": ".github/workflows/deploy-production.yml",
+    "job": "deploy-production",
+    "marker": "Deploy Health Production Worker"
+  },
+  {
     "path": ".github/workflows/deploy.yml",
     "job": "deploy-preview",
     "marker": "Deploy preview"
