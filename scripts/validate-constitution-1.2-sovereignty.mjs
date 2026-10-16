@@ -9,17 +9,18 @@ const budget=json("docs/DEPENDENCY_BUDGET.json");
 const backup=read("docs/SECURE_VAULT_BACKUP_RECOVERY_V1.md");
 const release=read("docs/DEVELOPMENT_RELEASE_POLICY.md");
 
-assert.equal(adoption.policyVersion,"1.2.0");
+// This compatibility filename is retained for existing jobs; policy itself must be CURRENT.
+assert.equal(adoption.policyVersion,"1.3.0");
 assert.ok(
   adoption.inheritedPillars.includes("operational-sovereignty-dependency-minimization"),
-  "missing Constitution 1.2 sovereignty pillar"
+  "missing current Constitution sovereignty pillar"
 );
 assert.deepEqual(adoption.disabledPillars,[]);
 assert.deepEqual(adoption.constitutionalWaivers,[]);
 
 assert.equal(
   budget.constitutionPolicy,
-  "blueprint-os:universal-century-grade@1.2.0"
+  "blueprint-os:universal-century-grade@1.3.0"
 );
 assert.equal(
   budget.defaultPrinciple,
