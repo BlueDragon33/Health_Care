@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "project": "BlueDragon33/Health_Care",
   "blueprintLevel": "B5",
-  "constitutionPolicy": "blueprint-os:universal-century-grade@1.2.0",
+  "constitutionPolicy": "blueprint-os:universal-century-grade@1.3.0",
   "defaultPrinciple": "LOCAL_CANONICAL_SENSITIVE_DATA_OFFLINE_FIRST_ENCRYPTED_OPTIONAL_SYNC",
   "canonicalDataRule": "Health/profile/Vault state remains on user-controlled local storage unless an explicitly approved purpose-built secure provider is introduced. Application Management and generic cloud productivity tools are not medical-data authorities.",
   "dependencies": [
