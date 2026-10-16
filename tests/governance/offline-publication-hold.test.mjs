@@ -7,6 +7,11 @@ const workflows=[
     "path": ".github/workflows/live-development-deploy.yml",
     "job": "deploy_live",
     "marker": "Deploy live development Worker"
+  },
+  {
+    "path": ".github/workflows/deploy.yml",
+    "job": "deploy-preview",
+    "marker": "Deploy preview"
   }
 ];
 for(const wf of workflows){
