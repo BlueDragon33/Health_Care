@@ -384,7 +384,7 @@ export default function HealthFramework({ initialCourse, device }: { initialCour
 
         {active === "today" ? <section className="hf-section">
           <SectionHeader title={dayKey === today ? todayRoutine.title : "Ngày đã chọn"} description="Checklist và cách diễn giải tiến độ tự đổi theo 8 giai đoạn từ 9 tháng đến hết 18 tuổi; dữ liệu cũ vẫn dùng cùng schema cục bộ để không mất lịch sử." aside={hydrated ? formatDate(dayKey) : "Đang đọc dữ liệu…"} />
-          <PremiumQuickActions onNavigate={(target) => setActive(target)} />
+          <PremiumQuickActions stage={profileAge.lifeStage} onNavigate={(target) => setActive(target)} />
           <StagePanel stage={profileAge.lifeStage} />
           <div className="hf-today-grid">
             <article className="hf-progress-card"><div className="hf-progress-title"><div><span>Tiến độ ngày</span><strong>{completed}/{todayRoutine.tasks.length}</strong></div><b>{progress}%</b></div><div className="hf-progress-track"><span style={{ width: `${progress}%` }} /></div><p>{todayRoutine.progressSummary}</p></article>
