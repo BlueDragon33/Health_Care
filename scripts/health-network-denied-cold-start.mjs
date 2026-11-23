@@ -10,6 +10,11 @@ if(process.env.HEALTH_OFFLINE_NETWORK_DENIED!=="1"){
  console.error("BLOCKED: run only from the documented Docker --network none CI job");
  process.exit(2);
 }
+const revision=String(process.env.SOURCE_REVISION||"");
+if(!/^[0-9a-f]{40}$/.test(revision)){
+ console.error("BLOCKED: exact GitHub source HEAD must be supplied to isolated Health test");
+ process.exit(2);
+}
 const origin="http://127.0.0.1:4173";
 const app=spawn("npm",["run","dev","--","--host","127.0.0.1","--port","4173"],{
  cwd:process.cwd(),env:{...process.env,LOCAL_CONTROL_PLANE:"1",LOCAL_CONTROL_ALLOW_LAN:"false"},
@@ -43,11 +48,40 @@ try{
  const payload=await contract.json();
  if(payload.application!=="health-care"&&payload.canonicalApplication!=="health-care")
   throw new Error("Offline health contract identity unverified");
+ // Verify local install shell, SW and real HTTP security boundary with the network
+ // physically denied. This never creates or reads patient records.
+ const manifestResponse=await fetch(origin+"/manifest.webmanifest",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(manifestResponse.status!==200)throw new Error("Offline health PWA manifest missing: HTTP "+manifestResponse.status);
+ const manifest=await manifestResponse.json();
+ if(manifest.start_url!=="/suc-khoe-tre"||manifest.scope!=="/"||manifest.display!=="standalone")
+  throw new Error("Offline health PWA start route/scope invalid");
+ const swResponse=await fetch(origin+"/sw.js",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(swResponse.status!==200)throw new Error("Offline health Service Worker missing: HTTP "+swResponse.status);
+ const sw=await swResponse.text();
+ if(sw.length<100||!/addEventListener|self|caches/i.test(sw))
+  throw new Error("Offline health Service Worker is not a script");
+ const unauthorized=await fetch(origin+"/api/control/status",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ const forbidden=await unauthorized.json();
+ // Without a configured control secret the trusted boundary intentionally
+ // fails closed with a typed 503, not an invented 401 or a mock authorization.
+ const explicitMissingSecret=unauthorized.status===503 && forbidden.code==="HEALTH_CONTROL_SECRET_UNCONFIGURED";
+ const explicitAccessDenied=[401,403].includes(unauthorized.status) &&
+   ["CONTROL_SERVICE_FORBIDDEN","CONTROL_TICKET_FORBIDDEN","CONTROL_ORIGIN_FORBIDDEN"].includes(forbidden.code);
+ if(!explicitMissingSecret && !explicitAccessDenied)
+  throw new Error("Offline protected control did not fail closed with an accepted specific reason: HTTP "+
+    unauthorized.status+" code "+String(forbidden.code||"missing"));
+ const repeat=await fetch(origin+"/suc-khoe-tre",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(repeat.status!==200||(await repeat.text()).length<150)
+  throw new Error("Offline health core route failed second real navigation");
  console.log(JSON.stringify({
-  result:"NETWORK_DENIED_COLD_START_SMOKE_PASS",
-  isolation:"docker --network none",routes:["/suc-khoe-tre","/","/api/control/contract"],
+  result:"NETWORK_DENIED_COLD_START_SHELL_AND_AUTH_BOUNDARY_PASS",
+  isolation:"docker --network none",
+  routes:["/suc-khoe-tre","/","/api/control/contract","/manifest.webmanifest","/sw.js","/suc-khoe-tre (repeat)"],
+  protectedControlStatus:unauthorized.status,protectedControlCode:forbidden.code,
+  authenticatedControlOperation:explicitMissingSecret?"BLOCKED_UNCONFIGURED":"UNVERIFIED",
+  sourceRevision:process.env.SOURCE_REVISION,
   offlinePersistedRecordRoundtrip:"UNVERIFIED",offlineVaultRestore:"UNVERIFIED",
-  productionAuthorization:false
+  clinicalUX:"UNVERIFIED",productionAuthorization:false
  }));
 } catch(e){
  console.error("HEALTH_NETWORK_DENIED_SMOKE_FAIL: "+(e instanceof Error?e.message:String(e)));
