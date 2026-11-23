@@ -43,11 +43,32 @@ try{
  const payload=await contract.json();
  if(payload.application!=="health-care"&&payload.canonicalApplication!=="health-care")
   throw new Error("Offline health contract identity unverified");
+ // Verify local install shell, SW and real HTTP security boundary with the network
+ // physically denied. This never creates or reads patient records.
+ const manifestResponse=await fetch(origin+"/manifest.webmanifest",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(manifestResponse.status!==200)throw new Error("Offline health PWA manifest missing: HTTP "+manifestResponse.status);
+ const manifest=await manifestResponse.json();
+ if(manifest.start_url!=="/suc-khoe-tre"||manifest.scope!=="/"||manifest.display!=="standalone")
+  throw new Error("Offline health PWA start route/scope invalid");
+ const swResponse=await fetch(origin+"/sw.js",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(swResponse.status!==200)throw new Error("Offline health Service Worker missing: HTTP "+swResponse.status);
+ const sw=await swResponse.text();
+ if(sw.length<100||!/addEventListener|self|caches/i.test(sw))
+  throw new Error("Offline health Service Worker is not a script");
+ const unauthorized=await fetch(origin+"/api/control/status",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(![401,403].includes(unauthorized.status))
+  throw new Error("Offline protected control status did not reject unauthenticated access: HTTP "+unauthorized.status);
+ const repeat=await fetch(origin+"/suc-khoe-tre",{redirect:"manual",signal:AbortSignal.timeout(5000)});
+ if(repeat.status!==200||(await repeat.text()).length<150)
+  throw new Error("Offline health core route failed second real navigation");
  console.log(JSON.stringify({
-  result:"NETWORK_DENIED_COLD_START_SMOKE_PASS",
-  isolation:"docker --network none",routes:["/suc-khoe-tre","/","/api/control/contract"],
+  result:"NETWORK_DENIED_COLD_START_SHELL_AND_AUTH_BOUNDARY_PASS",
+  isolation:"docker --network none",
+  routes:["/suc-khoe-tre","/","/api/control/contract","/manifest.webmanifest","/sw.js","/suc-khoe-tre (repeat)"],
+  protectedControlStatus:unauthorized.status,
+  sourceRevision:process.env.GITHUB_SHA||"unknown",
   offlinePersistedRecordRoundtrip:"UNVERIFIED",offlineVaultRestore:"UNVERIFIED",
-  productionAuthorization:false
+  clinicalUX:"UNVERIFIED",productionAuthorization:false
  }));
 } catch(e){
  console.error("HEALTH_NETWORK_DENIED_SMOKE_FAIL: "+(e instanceof Error?e.message:String(e)));
