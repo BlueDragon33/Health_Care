@@ -10,6 +10,11 @@ if(process.env.HEALTH_OFFLINE_NETWORK_DENIED!=="1"){
  console.error("BLOCKED: run only from the documented Docker --network none CI job");
  process.exit(2);
 }
+const revision=String(process.env.SOURCE_REVISION||"");
+if(!/^[0-9a-f]{40}$/.test(revision)){
+ console.error("BLOCKED: exact GitHub source HEAD must be supplied to isolated Health test");
+ process.exit(2);
+}
 const origin="http://127.0.0.1:4173";
 const app=spawn("npm",["run","dev","--","--host","127.0.0.1","--port","4173"],{
  cwd:process.cwd(),env:{...process.env,LOCAL_CONTROL_PLANE:"1",LOCAL_CONTROL_ALLOW_LAN:"false"},
@@ -74,7 +79,7 @@ try{
   routes:["/suc-khoe-tre","/","/api/control/contract","/manifest.webmanifest","/sw.js","/suc-khoe-tre (repeat)"],
   protectedControlStatus:unauthorized.status,protectedControlCode:forbidden.code,
   authenticatedControlOperation:explicitMissingSecret?"BLOCKED_UNCONFIGURED":"UNVERIFIED",
-  sourceRevision:process.env.GITHUB_SHA||"unknown",
+  sourceRevision:process.env.SOURCE_REVISION,
   offlinePersistedRecordRoundtrip:"UNVERIFIED",offlineVaultRestore:"UNVERIFIED",
   clinicalUX:"UNVERIFIED",productionAuthorization:false
  }));
