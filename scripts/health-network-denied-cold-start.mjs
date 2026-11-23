@@ -56,8 +56,15 @@ try{
  if(sw.length<100||!/addEventListener|self|caches/i.test(sw))
   throw new Error("Offline health Service Worker is not a script");
  const unauthorized=await fetch(origin+"/api/control/status",{redirect:"manual",signal:AbortSignal.timeout(5000)});
- if(![401,403].includes(unauthorized.status))
-  throw new Error("Offline protected control status did not reject unauthenticated access: HTTP "+unauthorized.status);
+ const forbidden=await unauthorized.json();
+ // Without a configured control secret the trusted boundary intentionally
+ // fails closed with a typed 503, not an invented 401 or a mock authorization.
+ const explicitMissingSecret=unauthorized.status===503 && forbidden.code==="HEALTH_CONTROL_SECRET_UNCONFIGURED";
+ const explicitAccessDenied=[401,403].includes(unauthorized.status) &&
+   ["CONTROL_SERVICE_FORBIDDEN","CONTROL_TICKET_FORBIDDEN","CONTROL_ORIGIN_FORBIDDEN"].includes(forbidden.code);
+ if(!explicitMissingSecret && !explicitAccessDenied)
+  throw new Error("Offline protected control did not fail closed with an accepted specific reason: HTTP "+
+    unauthorized.status+" code "+String(forbidden.code||"missing"));
  const repeat=await fetch(origin+"/suc-khoe-tre",{redirect:"manual",signal:AbortSignal.timeout(5000)});
  if(repeat.status!==200||(await repeat.text()).length<150)
   throw new Error("Offline health core route failed second real navigation");
@@ -65,7 +72,8 @@ try{
   result:"NETWORK_DENIED_COLD_START_SHELL_AND_AUTH_BOUNDARY_PASS",
   isolation:"docker --network none",
   routes:["/suc-khoe-tre","/","/api/control/contract","/manifest.webmanifest","/sw.js","/suc-khoe-tre (repeat)"],
-  protectedControlStatus:unauthorized.status,
+  protectedControlStatus:unauthorized.status,protectedControlCode:forbidden.code,
+  authenticatedControlOperation:explicitMissingSecret?"BLOCKED_UNCONFIGURED":"UNVERIFIED",
   sourceRevision:process.env.GITHUB_SHA||"unknown",
   offlinePersistedRecordRoundtrip:"UNVERIFIED",offlineVaultRestore:"UNVERIFIED",
   clinicalUX:"UNVERIFIED",productionAuthorization:false
